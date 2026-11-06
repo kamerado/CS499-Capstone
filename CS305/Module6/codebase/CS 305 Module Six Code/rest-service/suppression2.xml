@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions
+    xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd">
+	<suppress>
+	   <notes><![CDATA[
+	   file name: bcprov-jdk15on-1.46.jar
+	   Supressing all cves.
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: spring-boot-2.2.4.RELEASE.jar
+	   Supressing all cves.
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.springframework\.boot/spring\-boot@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: logback-classic-1.2.3.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: logback-core-1.2.3.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-core@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: log4j-api-2.12.1.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: snakeyaml-1.25.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: jackson-databind-2.10.2.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: tomcat-embed-core-9.0.30.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat\-embed\-core@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: hibernate-validator-6.0.18.Final.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.hibernate\.validator/hibernate\-validator@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: spring-web-5.2.3.RELEASE.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-web@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: spring-beans-5.2.3.RELEASE.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-beans@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: spring-webmvc-5.2.3.RELEASE.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-webmvc@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: spring-context-5.2.3.RELEASE.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-context@.*$</packageUrl>
+	</suppress>
+	<suppress>
+	   <notes><![CDATA[
+	   file name: spring-expression-5.2.3.RELEASE.jar
+	   ]]></notes>
+	   <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-expression@.*$</packageUrl>
+	</suppress>
+</suppressions>

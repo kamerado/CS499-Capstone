@@ -1,0 +1,505 @@
+// define Course struct to hold information about each course for vector and hash table
+Struct Couse { 
+  String courseNumber 
+  String courseName 
+  Vector<String> prerequisites 
+}
+
+// Function to open and read the file into vector 
+Function loadCoursesFromFile(String filename) { 
+  // open file	 
+  File file = open(filename) 
+
+  // loop through each line in the file 
+  For each line in file { 
+    //  Split the line by comma “,” 
+    List<String> lines = split(line, ‘,’) 
+
+    If (length(lines) < 2) { 
+      Print(“Error: line if formatted incorrectly, must be at least two parameters per line.”) 
+      Continue 
+    } 
+    // Extract course number and name 
+    String courseNumber = lines[0] 
+    String courseName = lines[1] 
+
+    // Create new course object 
+    Course newCourse 
+    newCourse.courseNumber = courseNumber 
+    newCourse.courseName = courseName 
+
+    For (i = 2; i < length(lines); i++) { 
+      String prerequisite = tokens[i] 
+      // Ensure course is valid 
+      If (courseExists(prerequsite)) { 
+        newCourse.prerequisites.add(prerequisite) 
+      } else { 
+        Print(“Course does not exist.”) 
+      } 
+    } 
+    courseList.add(newCourse) 
+  }
+  Close(file)
+}
+
+// Function to check if course is valid 
+Function courseExists(String courseNumber) { 
+  For (each course in courseList) { 
+    If (course.courseNumber == courseNumber) { 
+      Return true 
+    } 
+  } 
+  Return false 
+} 
+
+// Function to search and print course information 
+Function printCourseInfo(String courseNumber) { 
+  // search for the course in the courseList 
+  For (each course in courseList) { 
+    if (course.courseNumber == courseNumber) { 
+      print(“Course: ” + course.courseNumber “ - “ course.courseName) 
+    } 
+    Print(“Prerequsisites: “)
+    If (course.prerequisistes.size > 0) {
+      For (each prerequisite in course.prerequisites) {
+        Print(prerequisite)
+      }
+    } else { 
+      Print(“none”) 
+    } 
+    return 
+  } 
+  Print(“Error: course not found”) 
+}
+
+// sort vector.
+Fucntion partition(vector<Course>& courses, int lowIdx, int highIdx) {
+  // pick middle element as pivot
+  midpoint = lowIdx + (highIdx - lowIdx) / 2
+  pivot = courses.at(midpoint).courseNumber
+
+  done = false
+  while (!done) {
+    // increment lowIdx while nums[lowIdx] less than pivot
+    while (courses.at(lowIdx).courseNumber less than pivot) {
+      lowIdx++
+    }
+
+    // decriment highIdx while pivot < nums[highIdx]
+    while (pivot less than courses.at(highIdx).courseNumber) {
+      highIdx--
+    }
+
+    // if zero or one element remain, all numbers are
+    // partitioned. return highIdx
+    if (lowIdx greater than or equal to highIdx) {
+      done = true
+    } else {
+      // swap nums[lowIdx] and nums[highIdx]
+      Course tmp = courses.at(lowIdx)
+      courses.at(lowIdx) = courses.at(highIdx)
+      courses.at(highIdx) = tmp
+
+      // update lowIdx and highIdx
+      lowIdx++
+      highIdx--
+    }
+  }
+
+  return highIdx
+}
+
+// quicksort to sort alphanumerically
+Function quickSort(vector<Course>& courses, int lowIdx, int highIdx) {
+  // base case: if partition size is 1 or 0,
+  // the partition is already sorted.
+  if (lowIdx >= highIdx) {
+    return;
+  }
+
+  // partition the data within the array. Value lowEndIdx
+  // returned from partitioning is the index of the low
+  // partitions last index.
+  int lowEndIdx = partition(courses, lowIdx, highIdx);
+
+  // Recursivly sort low partition (lowIdx to lowEnxIdx)
+  // and high partition (lowEnxIdx to highIdx)
+  quickSort(courses, lowIdx, lowEndIdx);
+  quickSort(courses, lowEndIdx + 1, highIdx);
+}
+
+// Fucntion to select and print course information
+Function selectCourse() {
+  Print(“Enter course number to display: ”)	 
+  String input = getUserInput() 
+  PrintCourseInfo(input)
+}
+
+Function printAll() {
+  for (int i = 0 is less than courseList size, i++) {
+    print(courseList.at(i).courseNumber, ": ", courseList.at(i).courseName)
+    print("Prerequisites:")
+    if (prerequisites is not null) {
+      curr = prerequisites.at(0)
+      while (curr is not null) {
+        print("curr.courseNumber")
+      }
+    } else {
+      print "None"
+    }
+  }
+}
+
+// main func to demonstrate how the functions are used with a vector 
+Function main(){ 
+  // Create a vector to store all courses 
+  Vector<Course> courseList 
+
+  while (selection > 0 && selection < 4) {
+    print("---Select option---")
+    print("1. Load data from file")
+    print("2. print data")
+    print("3. print selected course")
+    print("9. Exit")
+    selection = getUserInput()
+  
+    SWITCH selection {
+      case 1:
+        call LoadCourseFromFile("Courses.txt")
+        break
+      case 2:
+        call quicksort(courseList, 0, courseList.size() - 1)
+        printAll()
+        break
+      case 3:
+        call selectCourse()
+        break
+      default:
+        print("Good Bye.")
+        break
+    }
+  }
+} 
+
+
+
+
+/*
+ * HashTable
+ */
+
+// Function to open and read the file into hashtable 
+Function loadCoursesFromFile(String filename) { 
+// Open file 
+File file = open(filename) 
+
+  // Loop through each line in the file 
+  For each line in file { 
+    // Split the line by comma "," 
+    List<String> lines = split(line, ',') 
+    
+    // Validate that there are at least two parameters (courseNumber and courseName) 
+    If length(lines) < 2 { 
+      Print("Error: Line is incorrectly formatted. Must have at least two parameters per line.") 
+      Continue 
+    } 
+    
+    // Extract course number and name 
+    String courseNumber = lines[0] 
+    String courseName = lines[1] 
+    
+    // Create a new Course object 
+    Course newCourse 
+    newCourse.courseNumber = lines[0] 
+    newCourse.courseName = lines[0] 
+    
+    // Loop through remaining tokens as prerequisites 
+    For (i = 2 to length(lines) - 1) {
+      String prerequisite = lines[i] 
+      
+      // Ensure course is valid before adding 
+      If courseExists(prerequisite) { 
+        newCourse.prerequisites.add(prerequisite)  
+      } Else { 
+        Print("Warning: Prerequisite " + prerequisite + " does not exist." 
+      }
+    }
+    
+    // Insert the new course into the hash table 
+    courseTable.Insert(newCourse)
+  }
+  
+  // Close the file 
+  Close(file) 
+} 
+  
+// Function to check if a course is valid (exists in the hash table) 
+Function courseExists(String courseNumber) { 
+  // Search for the course in the hash table 
+  Return courseTable.Search(courseNumber) != emptyCourse 
+} 
+
+// Function to print course information and prerequisites 
+Function printCourseInfo(String courseNumber) { 
+  // Search for the course in the hash table 
+  Course course = courseTable.Search(courseNumber) 
+
+  // Check if the course is found 
+  If course.courseNumber == "" { 
+    Print("Error: Course not found.") 
+    return
+  }
+}
+
+// Print all courses
+printAll() {
+  for (i = 0 is less than tableSize, ++i) {
+    Node curr = nodes.at(i)
+    while (curr != nullptr && curr->key != UINT_MAX) {
+      print("Key ", curr->key, ": ", curr->bid.bidId, curr->bid.title, curr->bid.amount, curr->bid.fund)
+      curr = curr->next;
+    }
+  }
+}
+
+// Fucntion to select and print course information
+Function selectCourse() {
+  Print(“Enter course number to display: ”)	 
+  String input = getUserInput() 
+  PrintCourseInfo(input)
+}
+
+// main func to demonstrate how the functions are used with a hashtable 
+Function main(){ 
+  // Create new hashtable 
+  Hashtable<int, courseNumber> 
+
+  while (selection > 0 && selection < 4) {
+    print("---Select option---")
+    print("1. Load data from file")
+    print("2. print data")
+    print("3. print selected course")
+    print("9. Exit")
+    selection = getUserInput()
+  
+    SWITCH selection {
+      case 1:
+        LoadCourseFromFile("Courses.txt")
+        break
+      case 2:
+        printAll()
+        break
+      case 3:
+        selectCourse();
+        break
+      default:
+        print("Good Bye.")
+        break
+    }
+  }
+} 
+
+
+/*
+ * BST
+ */
+
+// define Course struct to hold information about each course
+Struct Couse {
+  String courseNumber
+  String courseName
+  Vector<String> prerequisites
+}
+
+Struct Node {
+  Course course
+  Node *left
+  Node *right
+  Node() // default constructor
+  Node(Course) // Initialize with Course
+}
+
+Class BST {
+
+  Private:
+    Course *root;
+    Void addNode(Course)
+
+  Public:
+    Void Insert(Course)
+    Course Search(string)
+
+}
+
+// Function to search and print course information
+Function printCourseInfo(String courseNumber)
+  // search for the course in the courseList
+  Course course = bst->Search(courseNumber);
+
+  If (course is null) { 
+    Print(“Course not found”) 
+    return 
+  } 
+
+  print(“Course: ” + course.courseNumber “ - “ course.courseName)
+  print(“Prerequsisites: “)
+
+  If (course.prerequisistes.size > 0) {
+    For (each prerequisite in course.prerequisites) {
+      Print(prerequisite) 
+    }
+  } else {
+    Print(“none”)
+  }
+  return
+
+}
+
+// Function to open and read the file into vector
+Functions loadCoursesFromFile(String filename) {
+  // open file	
+  File file = open(filename) 
+
+  // loop through each line in the file
+  For each line in file { 
+    //  Split the line by comma “,”
+    List<String> lines = split(line, ‘,’)
+
+    If (length(lines) < 2) {
+      Print(“Error: line if formatted incorrectly, must be at least two parameters per line.”)
+      Continue
+    }
+
+    // Extract course number and name
+    String courseNumber = lines[0]
+    String courseName = lines[1]
+
+    // Create new course object
+    Course newCourse
+    newCourse.courseNumber = courseNumber
+    newCourse.courseName = courseName
+
+    For (i = 2; i < length(lines); i++) {
+      String prerequisite = tokens[i]
+
+      // Ensure course is valid
+      If (courseExists(prerequsite)) {
+        newCourse.prerequisites.add(prerequisite)
+      } else {
+        Print(“Course does not exist.”)
+      }
+    } 
+    bst->insert(newCourse)
+  }
+  Close(file)
+}
+
+// Function to check if course is valid
+Function courseExists(String courseNumber) {
+  For (each course in courseList) {
+    If (course.courseNumber == courseNumber) {
+      Return true
+    }
+  }
+  Return false 
+}
+
+// Function to insert into bst.
+Function insert(Course){
+  If root is null {
+    Root = new Node(Course)
+  } else {
+    AddNode(root, Couse)
+  }
+} 
+
+// add node to bst
+Function addNode(Node*, Course) {
+  If (node->Course.courseNumber > Course.courseNumber) {
+    If (node->left is null) {
+      Node->left = new Node(Course);
+    } else {
+      AddNode(node->left, Course)
+    }
+  } else {
+    If (node->right is null) {
+      Node-right = new Node(Course)
+    } else {
+      AddNode(node-Right, Course)
+    }
+  }
+}
+
+// Function to search and print course information
+Function Search(sring courseNumber) {
+  Course *curr = root 
+  While (curr is not null) {
+    If (courseNumber == curr->course->courseNumber) {
+      Return curr
+    } else if (courseNumber < curr->course->courseNumber) {
+      Curr = curr->left
+    } else { 
+      Curr = curr->right
+    } 
+  }
+  Course tmp
+  Return tmp
+}
+
+/**
+ * Traverse the tree in order
+ */
+void BinarySearchTree::InOrder() {
+  // call inOrder fuction and pass root
+  inOrder(root);
+}
+
+Function inOrder(Node *node) {
+  // if node is not equal to null ptr
+  if (node == nullptr)
+    return
+  // InOrder not left
+  inOrder(node->left)
+  // output bidID, title, amount, fund
+  print(node->bid.bidId, node->bid.title)
+  print(node->bid.amount, node->bid.fund)
+  // InOder right
+  inOrder(node->right);
+}
+
+// Fucntion to select and print course information
+Function selectCourse() {
+  Print(“Enter course number to display: ”)	 
+  String input = getUserInput() 
+  PrintCourseInfo(input)
+}
+
+// main func to demonstrate how the functions are used with a vector 
+Function main(){ 
+  // Instantiate BST object 
+  BST *bst = new BST(); 
+
+  while (selection > 0 && selection < 4) {
+    print("---Select option---")
+    print("1. Load data from file")
+    print("2. print data")
+    print("3. print selected course")
+    print("9. Exit")
+    selection = getUserInput()
+  
+    SWITCH selection {
+      case 1:
+        LoadCourseFromFile("Courses.txt")
+        break
+      case 2:
+        InOrder()
+        break
+      case 3:
+        selectCourse();
+        break
+      default:
+        print("Good Bye.")
+        break
+    }
+  }
+} 

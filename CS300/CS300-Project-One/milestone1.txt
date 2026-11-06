@@ -1,0 +1,179 @@
+// define Course struct to hold information about each course 
+
+Struct Couse { 
+
+String courseNumber 
+
+String courseName 
+
+Vector<String> prerequisites 
+
+} 
+
+ 
+
+// Create a vector to store all courses 
+
+Vector<Course> courseList 
+
+ 
+
+// Function to open and read the file 
+
+Functions loadCoursesFromFile(String filename) { 
+
+// open file	 
+
+File file = open(filename) 
+
+ 
+
+// loop through each line in the file 
+
+For each line in file { 
+
+//  Split the line by comma “,” 
+
+List<String> lines = split(line, ‘,’) 
+
+ 
+
+If (legnth(lines) < 2) { 
+
+Print(“Error: line if formatted incorrectly, must be at least two                			parameters per line.”) 
+
+Continue 
+
+} 
+
+ 
+
+// Extract course number and name 
+
+String courseNumber = lines[0] 
+
+String courseName = lines[1] 
+
+ 
+
+ 
+
+// Create new course object 
+
+Course newCourse 
+
+newCourse.courseNumber = courseNumber 
+
+newCourse.courseName = courseName 
+
+ 
+
+For (i = 2; i < length(lines); i++) { 
+
+String prerequisite = tokens[i] 
+
+ 
+
+// Ensure course is valid 
+
+If (courseExists(prerequsite)) { 
+
+newCourse.prerequisites.add(prerequisite) 
+
+} else { 
+
+Print(“Course does not exist.”) 
+
+} 
+
+} 
+
+courseList.add(newCourse) 
+
+} 
+
+Close(file) 
+
+}  
+
+ 
+
+// Function to check if course is valid 
+
+Function courseExists(String courseNumber) { 
+
+For (each course in courseList) { 
+
+If (course.courseNumber == courseNumber) { 
+
+Return true 
+
+} 
+
+} 
+
+ 
+
+Return false 
+
+} 
+
+// Function to search and print course information 
+
+Function printCourseInfo(String courseNumber) { 
+
+// search for the course in the courseList 
+
+For (each course in courseList) { 
+
+if (course.courseNumber == courseNumber) { 
+
+print(“Course: ” + course.courseNumber “ - “ course.courseName) 
+
+} 
+
+ 
+
+Print(“Prerequsisites: “) 
+
+If (course.prerequisistes.size > 0) { 
+
+For (each prerequisite in course.prerequisites) { 
+
+Print(prerequisite) 
+
+} 
+
+} else { 
+
+Print(“none”) 
+
+} 
+
+return 
+
+} 
+
+Print(“Error: course not found”) 
+
+} 
+
+ 
+
+// main func to demonstrate how the functions are used 
+
+Function main(){ 
+
+LoadCourseFromFile(“courses.txt”) 
+
+ 
+
+Print(“Enter course number to display: ”) 
+
+String input = getUserInput() 
+
+ 
+
+PrintCourseInfo(input)	 
+
+} 
