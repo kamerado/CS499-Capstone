@@ -1,18 +1,24 @@
 #include <algorithm>
 #include <cctype>
-#include <climits>
-#include <cstdio>
-#include <cstring>
+#include <climits> // unused
+#include <cstdio>  //unused
+#include <cstring> //unused
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <sys/stat.h> // unused
+#include <unistd.h>   // unused
 #include <vector>
 
-#define DEFAULT_SIZE 179
+#define DEFAULT_SIZE 179 // unused here.
+
+// TODO: (SE)[Structure]: Some unused includes are maked above.
+// TODO: (SE)[Portability]: <sys/stat.h> and <unistd.h> are posix only and
+// unused. std::filesystem should be used in place. remove.
+// TODO: (SE)[Structure]: DEFAULT_SIZE is leftover code from the hashtable lab
+// froma nother module, not sure how it made its way here. remove
 
 typedef std::vector<std::string> Row;
 typedef std::vector<Row> Rows;
@@ -22,6 +28,8 @@ void clear() {
   std::cout << "\x1B[2J\x1B[H";
 }
 
+// TODO: (SE)[Defencive]: cin >> stops at whitespace, so filesnames with spaces
+// will fail. Use std::getline.
 void getInput(std::string &key) {
   std::cin >> key;
   std::cin.clear();
@@ -29,8 +37,13 @@ void getInput(std::string &key) {
 }
 
 /*
- * helper fucntion to egt input from user for main menu.
+ * helper fucntion to get input from user for main menu.
  */
+// TODO: (SE)[Defencive]: Only invalid_argument is caught. stoi throws
+// std::out_of_range on huge numbers, which is uncaught and terminates the
+// program. inputs like "123abc" are accpeted as 1. On EOF, cin fails
+// permanently and the menu loops forever. Catch exceptions by const&, check the
+// whole string was consumed, and handle EOF.
 bool getInput(int &input) {
   std::cout << "Please select an option: ";
   std::string strCinContent;
@@ -59,7 +72,10 @@ struct Course {
     courseTitle = "\0";
   }
 
-  // constructor with id.
+  // TODO: (SE)[Structure]: Constructors take strings and vectors by value. use
+  // const&.
+  // Default constructor assigning "\0" just makes an expty string. use default
+  // member initializers instead. constructor with id.
   Course(std::string id) : Course() { courseID = id; }
 
   // cosntructor with id, title.
@@ -93,6 +109,8 @@ struct Course {
 /*
  * Struct Node, using typename T for item.
  */
+// TODO: (SE)[Effeciency]: Key duplicates item.courseID, so each course id is
+// stored twice. Derive the key from the item instead.
 template <typename T> struct Node {
   T item;
   std::string key;
@@ -116,8 +134,16 @@ template <typename T> struct Node {
  * Class declaration for BinarySearchTree, using struct Node, and typename T for
  * item type.
  */
-// TODO: CourseID are usually sorted, so the BST is basically a linked List with
-// O(n) search. To fix this, I will replace this with a self balancing AVL tree.
+// TODO: (ALG)[Effeciency] CourseID are usually sorted, so the BST is basically
+// a linked List with O(n) search. Inserting is also O(n), so loading sorted
+// data is O(n^2). To fix this, I will replace this with a self balancing AVL
+// tree.
+//
+// TODO: (SE)[Memory]: Class owns raw pointers but does not delete its copy
+// constructor and assisgnment operator. A copy would share nodes and both
+// destructors would free them (double free). Fix: Delete them or use
+// unique_ptr. This, even though it will be replaced with the AVL tree, is
+// critical for for benchmarking the BST against the new AVL tree later.
 template <typename T> class BinarySearchTree {
 
   // private member variables.
@@ -159,6 +185,11 @@ template <typename T> BinarySearchTree<T>::BinarySearchTree() {
 /*
  * helper function to delete nodes recursivly for deconstructor.
  */
+// TODO: (ALG)[Effeciency]: Recusrive. Sorted input makes the tree degenerate
+// (height = n), so recusion deppth = n and a largere dataset could cause
+// overflow on the stack. Since the destructor calls this, the program would
+// crash on exit. This isn't noticable with the small sample provided. Fixed by
+// AVL (height ~log n).
 template <typename T> void BinarySearchTree<T>::DeleteTree(Node<T> *curr) {
   if (curr == nullptr)
     return;
@@ -185,6 +216,8 @@ template <typename T> BinarySearchTree<T>::~BinarySearchTree() {
 /**
  * Traverse the tree in order
  */
+// TODO: (ALG)[Effeciency]: clear() is UI logic and it should'nt be in the data
+// structure logic. Move this into the print screen fucntion before printing.
 template <typename T>
 void BinarySearchTree<T>::InOrder(void (*func)(Node<T> *)) {
   clear();
@@ -208,37 +241,40 @@ void BinarySearchTree<T>::PreOrder(void (*func)(Node<T> *)) {
 }
 
 /**
- * Insert a bid
+ * Insert an node.
  */
+// TODO: (SE)[Structure]: This uses std::string& and search uses std::string.
+// Use const std::string& instead of consistency, and to avoid copies.
 template <typename T>
 void BinarySearchTree<T>::Insert(T item, std::string &id) {
   addNode(item, id);
 }
 
 /**
- * Remove a bid
+ * Remove a node.
  */
-// TODO: Software design and Engineering
-// get rid of dangling pointer from returned values.
-// The function removeNode returns a pointer that is never used.
+// TODO: (SE)[Memory]: removeNode() returns the subtree root. but remove()
+// ignores it. Removing the root node deletes it while root still points to it,
+// (dangling pointer, use after free). Fix: root = removeNode(root, itemID);
 template <typename T> void BinarySearchTree<T>::Remove(std::string itemID) {
-  // remove node root bidID
   removeNode(root, itemID);
 }
 
 /**
- * Search for a bid
+ * Search for a node.
  */
+// TODO: (SE)[Structure]: returns empty course as not found. We can use an
+// optional here instead.
 template <typename T> T BinarySearchTree<T>::Search(std::string itemID) {
   // set current node equal to root
   Node<T> *curr = root;
 
-  // keep looping downwards until bottom reached or matching bidId found
+  // keep looping downwards until bottom reached or match
   while (curr != nullptr) {
-    // if match found, return current bid
+    // if match found, return
     if (itemID == curr->key) {
       return curr->item;
-      // if bid is smaller than current node then traverse left
+      // if smaller than current node then traverse left
     } else if (itemID < curr->key) {
       curr = curr->left;
 
@@ -255,6 +291,8 @@ template <typename T> T BinarySearchTree<T>::Search(std::string itemID) {
 /*
  * Function to add node to bst.
  */
+// TODO: (ALG)[Correctness]: allows duplicate courses. Fix is to check if they
+// exist and reject or update when key already exists.
 template <typename T>
 void BinarySearchTree<T>::addNode(T item, std::string &key) {
   // Create a new node with the item and the key (courseID)
@@ -294,11 +332,14 @@ void BinarySearchTree<T>::addNode(T item, std::string &key) {
  * Note: these traversals require that you have a method for printing your
  * custom item struct. In this implementaion shown I will create a method for
  * printing out the course structs information and pass it into these
- * functions. This function is on line 516.
+ * functions.
  */
+// TODO: (SE)[Defensive]: If the tree is empty, root is null, so node = root
+// leaves node null and node->left crashes. This is what causes the print-before
+// load crash. The fix is to return if node == nullptr.
 template <typename T>
 void BinarySearchTree<T>::inOrder(Node<T> *node, void (*func)(Node<T> *)) {
-  // if node is not equal to null ptr
+  // if node is null.
   if (node == nullptr)
     node = root;
   // InOrder not left
@@ -314,12 +355,13 @@ void BinarySearchTree<T>::inOrder(Node<T> *node, void (*func)(Node<T> *)) {
 /*
  * post-order traversal.
  */
-// TODO: Software design and engineering: Correctness.
-// Second function argument is omited. This function is unused in this
-// implementation, So it compiles. if it was ever used, then it would fail.
+// TODO: (SE)[Correctness]: Software design and engineering: Correctness.
+// Second function argument is omited. This function is a template,
+// so it only compiles when used, and since this was never used, I never caught
+// this.
 template <typename T>
 void BinarySearchTree<T>::postOrder(Node<T> *node, void (*func)(Node<T> *)) {
-  // if node is not equal to null ptr
+  // if node is equal to null ptr
   if (node == nullptr)
     return;
   postOrder(node->left);
@@ -330,12 +372,13 @@ void BinarySearchTree<T>::postOrder(Node<T> *node, void (*func)(Node<T> *)) {
 /*
  * pre-order traversal.
  */
-// TODO: Software design and engineering: Correctness.
-// Second function argument is omited. This function is unused in this
-// implementation, So it compiles. if it was ever used, then it would fail.
+// TODO: (SE)[Correctness]: Software design and engineering: Correctness.
+// Second function argument is omited. This function is a template,
+// so it only compiles when used, and since this was never used, I never caught
+// this.
 template <typename T>
 void BinarySearchTree<T>::preOrder(Node<T> *node, void (*func)(Node<T> *)) {
-  // if node is not equal to null ptr
+  // if node is equal to null ptr
   if (node == nullptr)
     return;
   func(node);
@@ -346,9 +389,8 @@ void BinarySearchTree<T>::preOrder(Node<T> *node, void (*func)(Node<T> *)) {
 /**
  * Remove item from Node (Recursive.)
  */
-// TODO: Software engineering: Correctness
-// Removing a node with two children copies the successor's items
-// but not its key, which causes corruption.
+// TODO: (ALG)[Correctness]: Removing a node with two children copies the
+// successor's items but not its key, which causes corruption.
 template <typename T>
 Node<T> *BinarySearchTree<T>::removeNode(Node<T> *node, std::string id) {
   if (node == nullptr)
@@ -374,28 +416,35 @@ Node<T> *BinarySearchTree<T>::removeNode(Node<T> *node, std::string id) {
       Node<T> *tmp = findMinNode(node->right);
 
       node->item = tmp->item;
-      // TODO: Nodes key still is the old CourseID/key.
+      // NOTE: above, key still is the old CourseID/key.
 
       node->right = removeNode(node->right, tmp->key);
     }
   }
-  return node; // TODO: consider deleting this node here.
+  return node;
 }
 
 // Helper function to find the minimum value node in a subtree
 template <typename T> Node<T> *BinarySearchTree<T>::findMinNode(Node<T> *node) {
   Node<T> *current = node;
 
-  // Find the leftmost leaf
+  // Find the leftmost node.
   while (current && current->left != nullptr) {
     current = current->left;
   }
 
   return current;
 }
+
 /*
  * helper function to read file into vector.
  */
+// TODO: (SE)[Error Handling]: If the file fails to open, nothing is reported
+// and laoding silently does nothing. Report the failure to the caller.
+// TODO: (SE)[Correctness]: While (ifile.good()) + getline is fragile. Use while
+// (getline()) instead.
+// TODO: (SE)[Error Handling]: exit(1) inside the helper kills the program and
+// skips cleanup. Throw or return an error so main cn decide what to do.
 void readFile(std::string csvPath, std::vector<std::string> &_originalFile) {
   std::string line;
 
@@ -413,7 +462,7 @@ void readFile(std::string csvPath, std::vector<std::string> &_originalFile) {
 
     if (_originalFile.size() == 0) { // If no data, exit program.
       std::cout << "error: no data in csv file." << std::endl;
-      exit(1);
+      exit(1); // TODO: Use proper error handling
     }
   }
 }
@@ -421,8 +470,15 @@ void readFile(std::string csvPath, std::vector<std::string> &_originalFile) {
 /*
  * helper function to read from vector into rows with individual columns.
  */
-// TODO: Software Design and Engineering: Memory
-// Allocating new row() each loop but never frees them.
+// TODO: (SE)[Memory]: Allocating new row() each loop but never frees them.
+// Since we are pushing back row into rows, it copies it, and we empty the
+// origonal. We never get rid of that original object and after the loop ends,
+// we lose the ability to free and it never is freed.
+// Fix: We dont need to allocte here at all. We can just let the containers own
+// the data so whent he loop ends, leftover data is destoryed automatically.
+// Simplest fix.
+// TODO: (SE)[Memory]: There is no input validation here, no whitespace
+// trimming, \r trimming, for windows, this would likely break.
 Rows *FileToRows(std::vector<std::string> &_originalFile) {
   Rows *rows = new Rows();
 
@@ -449,7 +505,8 @@ Rows *FileToRows(std::vector<std::string> &_originalFile) {
     if (row->size() < 2) { // if Row is less than two params error.
       std::cout << "Error: CSV is formated incorrectly." << std::endl;
       ;
-      exit(1);
+      exit(1); // TODO: [Error handling]: use proper error handling instead of
+               // exiting.
     }
     rows->push_back(*row); // push row into Rows.
     row->clear();          // Reset Row.
@@ -461,6 +518,9 @@ Rows *FileToRows(std::vector<std::string> &_originalFile) {
 /*
  * helper fucntion to insert into BST from rows.
  */
+// TODO: (DB)[Data integrity]: Prerequisites are never checked against courses,
+// dupe course IDS are accepted. In SQLite A PRIMARY KEY on courseID and FOREIGN
+// KEY on Prerequisites enforce both.
 void RowsToBST(BinarySearchTree<Course> &bst, Rows *rows) {
 
   /*
@@ -468,7 +528,7 @@ void RowsToBST(BinarySearchTree<Course> &bst, Rows *rows) {
    */
   Rows::iterator it2 = rows->begin();
 
-  int n = 0;
+  int n = 0;                          // unused
   for (; it2 != rows->end(); it2++) { // for each row.
 
     // Get data.
@@ -488,14 +548,10 @@ void RowsToBST(BinarySearchTree<Course> &bst, Rows *rows) {
 /*
  * function to parse csv file.
  */
-// TODO: Software Design and Engineering: Memory
-// Input handling does not account for certain fields such as quaoted feilds,
-// Line endings, stoi out of range errors, and abnormal inputs.
-// We should add better input validation here.
-// TODO: DataBases: Add sql implementation with ability to add rows via csv.
-// TODO: DataBases: Here, if we load the same file twice, there are no checks to
-// prevent duplicates (SQL should prevent this automatically but woth
-// mentioning).
+// TODO: (SE)[Memory]: Rows* from FileToRows is never deleted here.
+// TODO: (DB)[Structure]: Replace in-memory-only storage with SQLite.
+// courses(course_id PK, title) and prerequisites(course_id, prereq_id) with
+// FKs. Import the CSV inside a transaction using parameterized queries only.
 void csvParse(BinarySearchTree<Course> &bst, std::string &csvpath,
               std::vector<std::string> &_originalFile) {
   // read csv file into vector of lines.
@@ -511,6 +567,7 @@ void csvParse(BinarySearchTree<Course> &bst, std::string &csvpath,
 /*
  * helper function to get user input and search for input in BST.
  */
+// TODO: (DB): Search will become a parameterized SELECT once SQLite is added.
 void search(BinarySearchTree<Course> &bst) {
   clear();
 
@@ -559,6 +616,7 @@ void getPath(std::string &csvpath) {
 /*
  * helper function to print menu.
  */
+// TODO: (DB)[Structure]: Add menu options to add, update, and delete courses.
 void printMenu() {
   std::cout << "\n\n    1. Load File Into BST.\n";
   std::cout << "    2. Print Course List.\n";
@@ -569,7 +627,10 @@ void printMenu() {
 /*
  * helper fucntion to decide program logic based on user input.
  */
-// TODO: Software engineering: Defencive programming
+// TODO: (SE)[Variables]: csvpath and _origonalFile are passed by value, so
+// main's _oringoinalFile is never filled and is pointless.
+// TODO: (SE)[Structure]: Menu choices are 1, 2, 3, 9, which are magic numbers,
+// replace with enum class menuOption.
 void handleInput(BinarySearchTree<Course> &bst, int &input, bool &loop,
                  std::string csvpath, std::vector<std::string> _originalFile) {
   switch (input) {
@@ -579,7 +640,7 @@ void handleInput(BinarySearchTree<Course> &bst, int &input, bool &loop,
     break;
   case 2:
     // TODO: Make a check so that you cant call print
-    // before loading CSV file into BST.
+    // before loading CSV file into BST. Root cause found in InOrder().
     clear();
     bst.InOrder(print);
     break;
@@ -605,7 +666,7 @@ int main() {
    */
   BinarySearchTree<Course> bst;
   std::vector<std::string> _originalFile;
-  std::vector<std::string> _header;
+  std::vector<std::string> _header; // unused
   std::string csvpath;
   bool loop = true;
   int input;
@@ -617,6 +678,7 @@ int main() {
   while (loop) {
     printMenu();
     if (getInput(input)) {
+      // TODO: _origonalFile is passed by value, so the value never gets stored.
       handleInput(bst, input, loop, csvpath, _originalFile);
     }
   }
