@@ -1,0 +1,151 @@
+// define Course struct to hold information about each course
+Struct Couse {
+  String courseNumber
+  String courseName
+  Vector<String> prerequisites
+}
+
+Struct Node {
+  Course course
+  Node *left
+  Node *right
+  Node() // default constructor
+  Node(Course) // Initialize with Course
+}
+
+Class BST {
+
+  Private:
+    Course *root;
+    Void addNode(Course)
+
+  Public:
+    Void Insert(Course)
+    Course Search(string)
+
+}
+
+// Function to search and print course information
+Function printCourseInfo(String courseNumber)
+  // search for the course in the courseList
+  Course course = bst->Search(courseNumber);
+
+  If (course is null) { 
+    Print(“Course not found”) 
+    return 
+  } 
+
+  print(“Course: ” + course.courseNumber “ - “ course.courseName)
+  print(“Prerequsisites: “)
+
+  If (course.prerequisistes.size > 0) {
+    For (each prerequisite in course.prerequisites) {
+      Print(prerequisite) 
+    }
+  } else {
+    Print(“none”)
+  }
+  return
+
+}
+
+// Function to open and read the file into vector
+Functions loadCoursesFromFile(String filename) {
+  // open file	
+  File file = open(filename) 
+
+  // loop through each line in the file
+  For each line in file { 
+    //  Split the line by comma “,”
+    List<String> lines = split(line, ‘,’)
+
+    If (length(lines) < 2) {
+      Print(“Error: line if formatted incorrectly, must be at least two parameters per line.”)
+      Continue
+    }
+
+    // Extract course number and name
+    String courseNumber = lines[0]
+    String courseName = lines[1]
+
+    // Create new course object
+    Course newCourse
+    newCourse.courseNumber = courseNumber
+    newCourse.courseName = courseName
+
+    For (i = 2; i < length(lines); i++) {
+      String prerequisite = tokens[i]
+
+      // Ensure course is valid
+      If (courseExists(prerequsite)) {
+        newCourse.prerequisites.add(prerequisite)
+      } else {
+        Print(“Course does not exist.”)
+      }
+    } 
+    bst->insert(newCourse)
+  }
+  Close(file)
+}
+
+// Function to check if course is valid
+Function courseExists(String courseNumber) {
+  For (each course in courseList) {
+    If (course.courseNumber == courseNumber) {
+      Return true
+    }
+  }
+  Return false 
+}
+
+// Function to insert into bst.
+Function insert(Course){
+  If root is null {
+    Root = new Node(Course)
+  } else {
+    AddNode(root, Couse)
+  }
+} 
+
+// add node to bst
+Function addNode(Node*, Course) {
+  If (node->Course.courseNumber > Course.courseNumber) {
+    If (node->left is null) {
+      Node->left = new Node(Course);
+    } else {
+      AddNode(node->left, Course)
+    }
+  } else {
+    If (node->right is null) {
+      Node-right = new Node(Course)
+    } else {
+      AddNode(node-Right, Course)
+    }
+  }
+}
+
+// Function to search and print course information
+Function Search(sring courseNumber) {
+  Course *curr = root 
+  While (curr is not null) {
+    If (courseNumber == curr->course->courseNumber) {
+      Return curr
+    } else if (courseNumber < curr->course->courseNumber) {
+      Curr = curr->left
+    } else { 
+      Curr = curr->right
+    } 
+  }
+  Course tmp
+  Return tmp
+} 
+
+// main func to demonstrate how the functions are used with a vector 
+Function main(){ 
+  // Instantiate BST object 
+  BST *bst = new BST(); 
+  LoadCourseFromFile(“courses.txt”) 
+  Print(“Enter course number to display: ”)	 
+  String input = getUserInput() 
+  PrintCourseInfo(input)	 
+} 
