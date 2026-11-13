@@ -13,13 +13,27 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # needed on Windows/MSVC
 FetchContent_MakeAvailable(googletest)
 
-add_library(csv csv.cpp)
+add_library(catalog_lib
+  src/csv.cpp
+  src/helpers.cpp
+)
 
-add_executable(app main.cpp)
-target_link_libraries(app csv)
+add_executable(app
+  src/main.cpp
+)
+
+target_link_libraries(app catalog_lib)
 
 enable_testing()
-add_executable(csv_test tests/csv_test.cpp)
-target_link_libraries(csv_test csv GTest::gtest_main)
+
+add_executable(csv_test
+  tests/csv_test.cpp
+)
+
+target_include_directories(app PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
+target_include_directories(catalog_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
+target_include_directories(csv_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
+
+target_link_libraries(csv_test catalog_lib GTest::gtest_main)
 include(GoogleTest)
 gtest_discover_tests(csv_test)

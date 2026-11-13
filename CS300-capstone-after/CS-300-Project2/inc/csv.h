@@ -62,11 +62,8 @@ typedef std::vector<std::string> Row;
 typedef std::vector<Row> Rows;
 
 void readFile(std::string csvPath, std::vector<std::string> &_originalFile);
-
 std::string trim(const std::string &s);
-
 bool verifyFile(const Rows &rows);
-
 Rows FileToRows(std::vector<std::string> &_originalFile);
 
 #endif

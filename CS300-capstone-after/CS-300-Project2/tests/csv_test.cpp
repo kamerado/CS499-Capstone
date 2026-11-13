@@ -1,4 +1,4 @@
-#include "../csv.h"
+#include "csv.h"
 #include <gtest/gtest.h>
 
 TEST(FileToRows, ValidFileLoads) {
