@@ -47,5 +47,6 @@ target_include_directories(tree_bench PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
 
 target_link_libraries(tree_bench catalog_lib benchmark::benchmark)
 target_link_libraries(tests catalog_lib GTest::gtest_main)
+target_compile_options(catalog_lib PRIVATE -Wall -Wextra -Wpedantic)
 include(GoogleTest)
 gtest_discover_tests(tests)
