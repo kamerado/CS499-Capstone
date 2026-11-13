@@ -22,7 +22,6 @@ void RowsToBST(BinarySearchTree<Course> &bst, Rows rows) {
    */
   Rows::iterator it2 = rows.begin();
 
-  int n = 0;                         // unused
   for (; it2 != rows.end(); it2++) { // for each row.
 
     // Get data.
@@ -42,7 +41,7 @@ void RowsToBST(BinarySearchTree<Course> &bst, Rows rows) {
 /*
  * function to parse csv file.
  */
-// TODO: (SE)[Memory]: Rows* from FileToRows is never deleted here.
+// FIXED: (SE)[Memory]: Rows* from FileToRows is never deleted here.
 // TODO: (DB)[Structure]: Replace in-memory-only storage with SQLite.
 // courses(course_id PK, title) and prerequisites(course_id, prereq_id) with
 // FKs. Import the CSV inside a transaction using parameterized queries only.
