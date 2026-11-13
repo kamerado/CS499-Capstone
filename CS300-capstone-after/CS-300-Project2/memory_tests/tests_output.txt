@@ -1,0 +1,35 @@
+Running main() from /home/voidmain/projects/CS499-Capstone/CS300-capstone-after/CS-300-Project2/build-asan/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 11 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from FileToRows
+[ RUN      ] FileToRows.ValidFileLoads
+[       OK ] FileToRows.ValidFileLoads (0 ms)
+[ RUN      ] FileToRows.WindowsLineEndingsAreTrimmed
+[       OK ] FileToRows.WindowsLineEndingsAreTrimmed (0 ms)
+[ RUN      ] FileToRows.TrailingCommaIsIgnored
+[       OK ] FileToRows.TrailingCommaIsIgnored (0 ms)
+[ RUN      ] FileToRows.MissingIdThrows
+[       OK ] FileToRows.MissingIdThrows (0 ms)
+[ RUN      ] FileToRows.UnknownPrereqThrows
+[       OK ] FileToRows.UnknownPrereqThrows (0 ms)
+[ RUN      ] FileToRows.LineNumberCountsBlankLines
+[       OK ] FileToRows.LineNumberCountsBlankLines (0 ms)
+[----------] 6 tests from FileToRows (0 ms total)
+
+[----------] 5 tests from BST
+[ RUN      ] BST.EmptyTreeSearchReturnsNothing
+[       OK ] BST.EmptyTreeSearchReturnsNothing (0 ms)
+[ RUN      ] BST.InOrderIsSorted
+[       OK ] BST.InOrderIsSorted (0 ms)
+[ RUN      ] BST.DuplicateIsRejected
+Item already exists.
+[       OK ] BST.DuplicateIsRejected (0 ms)
+[ RUN      ] BST.RemoveNodeWithTwoChildren
+[       OK ] BST.RemoveNodeWithTwoChildren (0 ms)
+[ RUN      ] BST.RemoveRoot
+[       OK ] BST.RemoveRoot (0 ms)
+[----------] 5 tests from BST (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 11 tests from 2 test suites ran. (1 ms total)
+[  PASSED  ] 11 tests.

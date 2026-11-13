@@ -6,5 +6,6 @@
 void clear();
 void getInput(std::string &key);
 bool getInput(int &input);
+bool exists(const std::string &name);
 
 #endif // !HELPERS_H

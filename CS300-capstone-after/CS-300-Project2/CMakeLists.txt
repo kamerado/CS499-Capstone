@@ -13,6 +13,15 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # needed on Windows/MSVC
 FetchContent_MakeAvailable(googletest)
 
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  benchmark
+  URL https://github.com/google/benchmark/archive/refs/tags/v1.9.0.zip
+)
+FetchContent_MakeAvailable(benchmark)
+
+add_executable(tree_bench bench/tree_bench.cpp)
+
 add_library(catalog_lib
   src/csv.cpp
   src/helpers.cpp
@@ -26,14 +35,17 @@ target_link_libraries(app catalog_lib)
 
 enable_testing()
 
-add_executable(csv_test
+add_executable(tests
   tests/csv_test.cpp
+  tests/bst_test.cpp
 )
 
 target_include_directories(app PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
 target_include_directories(catalog_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
-target_include_directories(csv_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
+target_include_directories(tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
+target_include_directories(tree_bench PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
 
-target_link_libraries(csv_test catalog_lib GTest::gtest_main)
+target_link_libraries(tree_bench catalog_lib benchmark::benchmark)
+target_link_libraries(tests catalog_lib GTest::gtest_main)
 include(GoogleTest)
-gtest_discover_tests(csv_test)
+gtest_discover_tests(tests)

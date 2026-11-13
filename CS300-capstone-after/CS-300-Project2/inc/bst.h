@@ -1,56 +1,13 @@
 #ifndef BST_H
 #define BST_H
 
+#include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
-#include "course.h"
-#include "csv.h"
-#include "helpers.h"
-
-// // Struct course.
-// struct Course {
-//   std::string courseID;
-//   std::string courseTitle;
-//   std::vector<std::string> prereq;
-//
-//   // default constructor.
-//   Course() = default;
-//
-//   // FIXed: (SE)[Structure]: Constructors take strings and vectors by value.
-//   use
-//   // const&.
-//   // Default constructor assigning "\0" just makes an expty string. use
-//   default
-//   // member initializers instead. constructor with id.
-//   explicit Course(const std::string &id) : courseID(id) {}
-//
-//   // cosntructor with id, title.
-//   Course(const std::string &id, const std::string &title)
-//       : courseID(id), courseTitle(title) {}
-//
-//   // constructor with id, title, prereqs.
-//   Course(const std::string &id, const std::string &title,
-//          const std::vector<std::string> &preReq)
-//       : courseID(id), courseTitle(title), prereq(preReq) {}
-//
-//   // Func to print course data.
-//   void print() const {
-//     std::cout << "Course ID: " << courseID << "\n"
-//               << "Course Title: " << courseTitle << "\n";
-//     if (!prereq.empty()) {
-//       auto it = prereq.begin();
-//       std::cout << "Prerequisites: " << "\n";
-//       for (; it < prereq.end(); it++) {
-//         std::cout << "    " << *it << "\n";
-//       }
-//       std::cout << std::endl;
-//     }
-//   }
-//
-//   const std::string &getKey() const { return courseID; }
-// };
+// #include "course.h"
 
 /*
  * Struct Node, using typename T for item.
@@ -94,9 +51,11 @@ private:
   // Private member methods.
 private:
   void addNode(const T &item);
-  void inOrder(Node<T> *node, void (*func)(Node<T> *));
-  void postOrder(Node<T> *node, void (*func)(Node<T> *));
-  void preOrder(Node<T> *node, void (*func)(Node<T> *));
+  void inOrder(Node<T> *node, const std::function<void(const T &)> &func) const;
+  void postOrder(Node<T> *node,
+                 const std::function<void(const T &)> &func) const;
+  void preOrder(Node<T> *node,
+                const std::function<void(const T &)> &func) const;
   std::unique_ptr<Node<T>> removeNode(std::unique_ptr<Node<T>> node,
                                       const std::string &courseID);
   Node<T> *findMinNode(Node<T> *);
@@ -115,9 +74,9 @@ public:
 
   // Public member methods.
 public:
-  void InOrder(void (*func)(Node<T> *));
-  void PostOrder(void (*func)(Node<T> *));
-  void PreOrder(void (*func)(Node<T> *));
+  void InOrder(const std::function<void(const T &)> &func) const;
+  void PostOrder(const std::function<void(const T &)> &func) const;
+  void PreOrder(const std::function<void(const T &)> &func) const;
   void Insert(const T &item);
   void Remove(const std::string &itemID);
   std::optional<T> Search(const std::string &itemID);
@@ -130,8 +89,9 @@ public:
 // data structure logic. Move this into the print screen fucntion before
 // printing.
 template <typename T>
-void BinarySearchTree<T>::InOrder(void (*func)(Node<T> *)) {
-  clear();
+void BinarySearchTree<T>::InOrder(
+    const std::function<void(const T &)> &func) const {
+  // clear();
   inOrder(root.get(), func);
 }
 
@@ -139,7 +99,8 @@ void BinarySearchTree<T>::InOrder(void (*func)(Node<T> *)) {
  * Traverse the tree in post-order
  */
 template <typename T>
-void BinarySearchTree<T>::PostOrder(void (*func)(Node<T> *)) {
+void BinarySearchTree<T>::PostOrder(
+    const std::function<void(const T &)> &func) const {
   postOrder(root.get(), func);
 }
 
@@ -147,7 +108,8 @@ void BinarySearchTree<T>::PostOrder(void (*func)(Node<T> *)) {
  * Traverse the tree in pre-order
  */
 template <typename T>
-void BinarySearchTree<T>::PreOrder(void (*func)(Node<T> *)) {
+void BinarySearchTree<T>::PreOrder(
+    const std::function<void(const T &)> &func) const {
   preOrder(root.get(), func);
 }
 
@@ -253,7 +215,8 @@ template <typename T> void BinarySearchTree<T>::addNode(const T &item) {
 // leaves node null and node->left crashes. This is what causes the print
 // before load crash. The fix is to return if node == nullptr.
 template <typename T>
-void BinarySearchTree<T>::inOrder(Node<T> *node, void (*func)(Node<T> *)) {
+void BinarySearchTree<T>::inOrder(
+    Node<T> *node, const std::function<void(const T &)> &func) const {
   // if node is null.
   if (node == nullptr)
     return;
@@ -261,7 +224,7 @@ void BinarySearchTree<T>::inOrder(Node<T> *node, void (*func)(Node<T> *)) {
   if (node->left != nullptr) {
     inOrder(node->left.get(), func);
   }
-  func(node);
+  func(node->item);
   if (node->right != nullptr) {
     inOrder(node->right.get(), func);
   }
@@ -275,13 +238,14 @@ void BinarySearchTree<T>::inOrder(Node<T> *node, void (*func)(Node<T> *)) {
 // so it only compiles when used, and since this was never used, I never caught
 // this.
 template <typename T>
-void BinarySearchTree<T>::postOrder(Node<T> *node, void (*func)(Node<T> *)) {
+void BinarySearchTree<T>::postOrder(
+    Node<T> *node, const std::function<void(const T &)> &func) const {
   // if node is equal to null ptr
   if (node == nullptr)
     return;
   postOrder(node->left.get(), func);
   postOrder(node->right.get(), func);
-  func(node);
+  func(node->item);
 }
 
 /*
@@ -292,11 +256,12 @@ void BinarySearchTree<T>::postOrder(Node<T> *node, void (*func)(Node<T> *)) {
 // so it only compiles when used, and since this was never used, I never caught
 // this.
 template <typename T>
-void BinarySearchTree<T>::preOrder(Node<T> *node, void (*func)(Node<T> *)) {
+void BinarySearchTree<T>::preOrder(
+    Node<T> *node, const std::function<void(const T &)> &func) const {
   // if node is equal to null ptr
   if (node == nullptr)
     return;
-  func(node);
+  func(node->item);
   preOrder(node->left.get(), func);
   preOrder(node->right.get(), func);
 }

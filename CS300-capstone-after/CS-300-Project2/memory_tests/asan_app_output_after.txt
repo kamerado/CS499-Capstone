@@ -1,0 +1,37 @@
+
+Please enter csv file name: 
+
+[2J[H
+Filename invalid.
+
+Please enter csv file name: 
+
+[2J[H
+Welcome to the course planner.
+
+
+    1. Load File Into BST.
+    2. Print Course List.
+    3. Print Course.
+    9. Exit.
+
+Please select an option: 
+[2J[H
+
+    1. Load File Into BST.
+    2. Print Course List.
+    3. Print Course.
+    9. Exit.
+
+Please select an option: 
+[2J[HEnter courseID: 
+[2J[HNo valid search results.
+
+
+    1. Load File Into BST.
+    2. Print Course List.
+    3. Print Course.
+    9. Exit.
+
+Please select an option: 
+[2J[HGoodbye.

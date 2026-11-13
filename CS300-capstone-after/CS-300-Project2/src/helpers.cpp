@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 
 void clear() {
@@ -51,3 +52,8 @@ bool getInput(int &input) {
     }
   }
 }
+
+/*
+ * helper funciton to check if file exists.
+ */
+bool exists(const std::string &name) { return std::filesystem::exists(name); }

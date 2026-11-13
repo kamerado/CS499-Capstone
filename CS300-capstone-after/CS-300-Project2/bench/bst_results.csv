@@ -1,0 +1,42 @@
+2026-11-12T23:30:29-05:00
+Running ./tree_bench
+Run on (12 X 4780.44 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x6)
+  L1 Instruction 32 KiB (x6)
+  L2 Unified 1024 KiB (x6)
+  L3 Unified 32768 KiB (x1)
+Load Average: 1.54, 1.54, 1.59
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
+"BM_Insert<BST, false>/256",3574,198534,198361,ns,,,,,
+"BM_Insert<BST, false>/512",906,785384,785116,ns,,,,,
+"BM_Insert<BST, false>/1024",214,3.24848e+06,3.2475e+06,ns,,,,,
+"BM_Insert<BST, false>/2048",56,1.25789e+07,1.25736e+07,ns,,,,,
+"BM_Insert<BST, false>/4096",14,4.87076e+07,4.86927e+07,ns,,,,,
+"BM_Insert<BST, false>/8192",4,2.13933e+08,2.13816e+08,ns,,,,,
+"BM_Insert<BST, false>_BigO",,3.17045,3.16877,N^2,,,,,
+"BM_Insert<BST, false>_RMS",,4.11045e-11,4.10034e-11,,,,,,
+"BM_Insert<BST, true>/256",38258,18170.7,18160.1,ns,,,,,
+"BM_Insert<BST, true>/512",15710,44579.4,44561.5,ns,,,,,
+"BM_Insert<BST, true>/1024",7398,115802,115672,ns,,,,,
+"BM_Insert<BST, true>/2048",2255,305898,305765,ns,,,,,
+"BM_Insert<BST, true>/4096",912,755750,755513,ns,,,,,
+"BM_Insert<BST, true>/8192",392,1.77844e+06,1.77768e+06,ns,,,,,
+"BM_Insert<BST, true>_BigO",,16.3155,16.3087,NlgN,,,,,
+"BM_Insert<BST, true>_RMS",,8.66615e-11,8.66629e-11,,,,,,
+"BM_Search<BST, false>/256",5197,135420,135350,ns,,,,,
+"BM_Search<BST, false>/512",1332,534262,533996,ns,,,,,
+"BM_Search<BST, false>/1024",329,2.17718e+06,2.17669e+06,ns,,,,,
+"BM_Search<BST, false>/2048",77,9.07632e+06,9.07137e+06,ns,,,,,
+"BM_Search<BST, false>/4096",20,3.38688e+07,3.38557e+07,ns,,,,,
+"BM_Search<BST, false>/8192",5,1.46179e+08,1.46145e+08,ns,,,,,
+"BM_Search<BST, false>_BigO",,2.16881,2.16829,N^2,,,,,
+"BM_Search<BST, false>_RMS",,3.31513e-11,3.32189e-11,,,,,,
+"BM_Search<BST, true>/256",62636,11484.3,11477.9,ns,,,,,
+"BM_Search<BST, true>/512",25465,27962.7,27948,ns,,,,,
+"BM_Search<BST, true>/1024",10190,62440.1,62419.6,ns,,,,,
+"BM_Search<BST, true>/2048",4723,177512,177474,ns,,,,,
+"BM_Search<BST, true>/4096",1617,423919,423686,ns,,,,,
+"BM_Search<BST, true>/8192",732,975102,974743,ns,,,,,
+"BM_Search<BST, true>_BigO",,8.99414,8.99061,NlgN,,,,,
+"BM_Search<BST, true>_RMS",,7.10147e-11,7.10381e-11,,,,,,
