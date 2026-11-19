@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "avl.h"
 #include "bst.h"
 #include "course.h"
 #include "csv.h"
@@ -14,9 +15,9 @@
  * helper fucntion to insert into BST from rows.
  */
 // TODO: (DB)[Data integrity]: Prerequisites are never checked against
-// courses, dupe course IDS are accepted. In SQLite A PRIMARY KEY on courseID
-// and FOREIGN KEY on Prerequisites enforce both.
-void RowsToBST(BinarySearchTree<Course> &bst, Rows rows) {
+// courses, dupe course IDS are accepted. In SQLite A PRIMARY KEY on
+// courseID and FOREIGN KEY on Prerequisites enforce both.
+template <typename T> void RowsToDS(T &DS, Rows rows) {
   /*
    * iterate over rows.
    */
@@ -34,18 +35,18 @@ void RowsToBST(BinarySearchTree<Course> &bst, Rows rows) {
 
     // add data to Course.
     Course course(courseid, coursetitle, prereqs);
-    bst.Insert(course); // add Course to BST<T> where T = Course.
+    DS.Insert(course); // add Course to BST<T> where T = Course.
   }
 }
 
 /*
  * function to parse csv file.
  */
-// FIXED: (SE)[Memory]: Rows* from FileToRows is never deleted here.
 // TODO: (DB)[Structure]: Replace in-memory-only storage with SQLite.
 // courses(course_id PK, title) and prerequisites(course_id, prereq_id) with
 // FKs. Import the CSV inside a transaction using parameterized queries only.
-void csvParse(BinarySearchTree<Course> &bst, std::string &csvpath,
+template <typename T>
+void csvParse(T &DS, std::string &csvpath,
               std::vector<std::string> &_originalFile) {
   // read csv file into vector of lines.
   readFile(csvpath, _originalFile);
@@ -54,7 +55,7 @@ void csvParse(BinarySearchTree<Course> &bst, std::string &csvpath,
   try {
     Rows rows = FileToRows(_originalFile);
     // insert rows into bst.
-    RowsToBST(bst, rows);
+    RowsToDS(DS, rows);
   } catch (const std::exception &e) {
     std::cout << "Could not load file: " << e.what() << std::endl;
   }
@@ -64,7 +65,7 @@ void csvParse(BinarySearchTree<Course> &bst, std::string &csvpath,
  * helper function to get user input and search for input in BST.
  */
 // TODO: (DB): Search will become a parameterized SELECT once SQLite is added.
-void search(BinarySearchTree<Course> &bst) {
+template <typename T> void search(T &DS) {
   clear();
 
   std::string key;
@@ -76,7 +77,7 @@ void search(BinarySearchTree<Course> &bst) {
 
   clear();
 
-  auto tmp = bst.Search(key);
+  auto tmp = DS.Search(key);
   if (tmp.has_value() && tmp.value().getKey() == key) {
     tmp.value().print();
   } else {
@@ -109,10 +110,21 @@ void getPath(std::string &csvpath) {
  * helper function to print menu.
  */
 // TODO: (DB)[Structure]: Add menu options to add, update, and delete courses.
-void printMenu() {
-  std::cout << "\n\n    1. Load File Into BST.\n";
+void printMenu(int avlOrbst) {
+  // clear();
+  if (avlOrbst == 1)
+    std::cout << "\n\n    1. Load File Into AVL.\n";
+  else if (avlOrbst == 2) {
+    std::cout << "\n\n    1. Load File Into BST.\n";
+  }
   std::cout << "    2. Print Course List.\n";
-  std::cout << "    3. Print Course.\n";
+  std::cout << "    3. Print Course Tree.\n";
+  std::cout << "    4. Print Course.\n";
+  if (avlOrbst == 1)
+    std::cout << "    8. Switch to bst.\n";
+  else if (avlOrbst == 2) {
+    std::cout << "    8. Switch to avl.\n";
+  }
   std::cout << "    9. Exit.\n\n";
 }
 
@@ -120,31 +132,42 @@ void printMenu() {
 enum class MenuOption : int {
   LoadFile = 1,
   PrintCourseList = 2,
-  PrintCourse = 3,
+  PrintCourseTree = 3,
+  PrintCourse = 4,
+  Switch = 8,
   Exit = 9
 };
+//
+// Menu options. Values match what the user types at the prompt.
+enum class DSOption : int { AVLTree = 1, BST = 2, Exit = 9 };
 
 /*
  * helper fucntion to decide program logic based on user input.
  */
-// FIXED: (SE)[Variables]: csvpath and _origonalFile are passed by value, so
-// main's _oringoinalFile is never filled and is pointless.
-// FIXED: (SE)[Structure]: Menu choices are 1, 2, 3, 9, which are magic
-// numbers, replace with enum class menuOption.
-void handleInput(BinarySearchTree<Course> &bst, int &input, bool &loop,
+template <typename T>
+void handleInput(T &DS, int &input, bool &loop, int &avlOrbst,
                  std::string &csvpath,
                  std::vector<std::string> &_originalFile) {
   switch (static_cast<MenuOption>(input)) {
   case MenuOption::LoadFile:
-    csvParse(bst, csvpath, _originalFile);
+    DS.Clear();
+    _originalFile.clear();
+    csvParse(DS, csvpath, _originalFile);
     clear();
     break;
   case MenuOption::PrintCourseList:
     clear();
-    bst.InOrder([](const Course &c) { c.print(); });
+    DS.InOrder([](const Course &c) { c.print(); });
+    break;
+  case MenuOption::PrintCourseTree:
+    clear();
+    std::cout << "Not implemented yet." << std::endl;
     break;
   case MenuOption::PrintCourse:
-    search(bst);
+    search(DS);
+    break;
+  case MenuOption::Switch:
+    avlOrbst = (avlOrbst == 1) ? 2 : 1;
     break;
   case MenuOption::Exit:
     loop = false;
@@ -156,25 +179,56 @@ void handleInput(BinarySearchTree<Course> &bst, int &input, bool &loop,
   }
 }
 
+int avlOrBst() {
+  int input;
+  std::cout << "Would you like to use avl or bst?\n";
+  while (true) {
+    std::cout << "1. AVL\n";
+    std::cout << "2. BST\n";
+    std::cout << "9. Exit" << std::endl;
+    getInput(input);
+    if (input == 1 || input == 2 || input == 9)
+      return input;
+    std::cout << "Please enter a valid option.";
+  }
+}
+
 /*
  * main fucntion.
  */
 int main() {
   // Declare variables for functon implementaions.
   BinarySearchTree<Course> bst;
+  AVLTree<Course> avl;
   std::vector<std::string> _originalFile;
   std::string csvpath;
   bool loop = true;
   int input;
+  int avlOrbst;
 
   getPath(csvpath);
   clear();
 
   std::cout << "\nWelcome to the course planner." << std::endl;
+  avlOrbst = avlOrBst();
   while (loop) {
-    printMenu();
+    printMenu(avlOrbst);
     if (getInput(input)) {
-      handleInput(bst, input, loop, csvpath, _originalFile);
+      switch (static_cast<DSOption>(avlOrbst)) {
+      case DSOption::AVLTree:
+        handleInput(avl, input, loop, avlOrbst, csvpath, _originalFile);
+        break;
+      case DSOption::BST:
+        handleInput(bst, input, loop, avlOrbst, csvpath, _originalFile);
+        break;
+      case DSOption::Exit:
+        loop = false;
+        break;
+      default:
+        clear();
+        std::cout << "Please input a valid option." << std::endl;
+        break;
+      }
     }
   }
 

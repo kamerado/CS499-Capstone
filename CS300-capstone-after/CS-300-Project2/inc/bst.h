@@ -63,7 +63,7 @@ private:
   // Constructors
 public:
   BinarySearchTree() = default;
-  virtual ~BinarySearchTree() = default;
+  ~BinarySearchTree() { Clear(); }
 
   // Ownership is unique: no copies (prevents the shared-node double free),
   // but moves are allowed and transfer the whole tree.
@@ -80,7 +80,24 @@ public:
   void Insert(const T &item);
   void Remove(const std::string &itemID);
   std::optional<T> Search(const std::string &itemID);
+  void Clear();
 };
+
+template <typename T> void BinarySearchTree<T>::Clear() {
+  std::vector<std::unique_ptr<Node<T>>> stack;
+  if (root)
+    stack.push_back(std::move(root)); // root is now nullptr
+
+  while (!stack.empty()) {
+    std::unique_ptr<Node<T>> node = std::move(stack.back());
+    stack.pop_back();
+    if (node->left)
+      stack.push_back(std::move(node->left));
+    if (node->right)
+      stack.push_back(std::move(node->right));
+    // node goes out of scope here with no children, so no recursion
+  }
+}
 
 /**
  * Traverse the tree in order
