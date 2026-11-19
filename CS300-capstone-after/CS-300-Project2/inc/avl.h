@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AVL_H
 #define AVL_H
 
@@ -7,6 +8,8 @@
 #include <memory>
 #include <optional>
 #include <string>
+
+#include <Treeprint.h>
 
 // #include "course.h"
 
@@ -88,6 +91,7 @@ public:
   void PreOrder(const std::function<void(const T &)> &func) const;
   void Insert(const T &item);
   void Remove(const std::string &itemID);
+  const AVLNode<T> *Root() const { return root.get(); }
   std::optional<T> Search(const std::string &itemID) const;
   void Clear();
 };

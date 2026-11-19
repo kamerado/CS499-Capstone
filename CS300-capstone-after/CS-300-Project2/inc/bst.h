@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BST_H
 #define BST_H
 
@@ -79,6 +80,7 @@ public:
   void PreOrder(const std::function<void(const T &)> &func) const;
   void Insert(const T &item);
   void Remove(const std::string &itemID);
+  const Node<T> *Root() const { return root.get(); }
   std::optional<T> Search(const std::string &itemID);
   void Clear();
 };
