@@ -61,7 +61,7 @@ template <typename T> void RowsToDS(T &DS, Rows &rows) {
     std::string courseid = it2->at(0);
     std::string coursetitle = it2->at(1);
     std::vector<std::string> prereqs;
-    for (int i = 2; i < it2->size(); i++) {
+    for (std::size_t i = 2; i < it2->size(); i++) {
       prereqs.push_back(it2->at(i));
     }
 
@@ -133,8 +133,13 @@ void getPath(App &app) {
     std::cout << "\nPlease enter csv file name: " << std::endl;
     getInput(csvpath);
   }
-
-  readFile(csvpath, app.originalFile);
+  try {
+    readFile(csvpath, app.originalFile);
+  } catch (const EmptyFileException &e) {
+    std::cout << "Error: " << e.what() << std::endl;
+  } catch (const std::exception &) {
+    std::cout << "An error occored when opening file." << std::endl;
+  }
 }
 
 /*

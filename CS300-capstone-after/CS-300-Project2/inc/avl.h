@@ -34,7 +34,7 @@ template <typename T> struct AVLNode {
     return n ? n->height : 0;
   }
 
-  const int balance() const { return heightOf(left) - heightOf(right); }
+  int balance() const { return heightOf(left) - heightOf(right); }
 
   void updateHeight() {
     height = 1 + std::max(heightOf(left), heightOf(right));

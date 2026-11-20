@@ -5,7 +5,9 @@ set(CMAKE_CXX_STANDARD 20)          # needed for std::format
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ---- Dependencies ---------------------------------------------------------
 include(FetchContent)
+
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.zip
@@ -20,33 +22,39 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(benchmark)
 
-add_executable(tree_bench bench/tree_bench.cpp)
+# ---- Warnings for our own code only --------------------------------------
+# Set after the dependencies, so GoogleTest and Benchmark aren't affected.
+if(MSVC)
+  add_compile_options(/W4)
+else()
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
+# ---- Project code ---------------------------------------------------------
 add_library(catalog_lib
   src/csv.cpp
   src/helpers.cpp
 )
+target_include_directories(catalog_lib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/inc")
 
-add_executable(app
-  src/main.cpp
-)
+add_executable(app src/main.cpp)
+target_link_libraries(app PRIVATE catalog_lib)
 
-target_link_libraries(app catalog_lib)
+add_executable(tree_bench bench/tree_bench.cpp)
+target_link_libraries(tree_bench PRIVATE catalog_lib benchmark::benchmark)
 
+# ---- Tests ----------------------------------------------------------------
 enable_testing()
-
-add_executable(tests
-  tests/csv_test.cpp
-  tests/bst_test.cpp
-)
-
-target_include_directories(app PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
-target_include_directories(catalog_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
-target_include_directories(tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
-target_include_directories(tree_bench PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/inc")
-
-target_link_libraries(tree_bench catalog_lib benchmark::benchmark)
-target_link_libraries(tests catalog_lib GTest::gtest_main)
-target_compile_options(catalog_lib PRIVATE -Wall -Wextra -Wpedantic)
 include(GoogleTest)
-gtest_discover_tests(tests)
+
+function(add_unit_test name)
+  add_executable(${name}_test tests/${name}_test.cpp)
+  target_link_libraries(${name}_test PRIVATE catalog_lib GTest::gtest_main)
+  gtest_discover_tests(${name}_test
+    TEST_PREFIX "${name}/"
+    PROPERTIES LABELS "${name}")
+endfunction()
+
+add_unit_test(csv)
+add_unit_test(bst)
+add_unit_test(avl)

@@ -18,23 +18,17 @@ void readFile(std::string csvPath, std::vector<std::string> &_originalFile) {
   std::string line;
 
   std::ifstream ifile(csvPath.c_str());
-  try {
-    if (ifile.is_open()) {
-      while (std::getline(ifile, line)) {
-        if (line != "") {
-          _originalFile.push_back(line);
-        }
-      }
-      ifile.close();
-
-      if (_originalFile.size() == 0) { // If no data, exit program.
-        throw EmptyFileException();
+  if (ifile.is_open()) {
+    while (std::getline(ifile, line)) {
+      if (line != "") {
+        _originalFile.push_back(line);
       }
     }
-  } catch (const EmptyFileException &e) {
-    std::cout << "Error: " << e.what() << std::endl;
-  } catch (const std::exception &) {
-    std::cout << "An error occored when opening file." << std::endl;
+    ifile.close();
+
+    if (_originalFile.size() == 0) { // If no data, exit program.
+      throw EmptyFileException();
+    }
   }
 }
 
