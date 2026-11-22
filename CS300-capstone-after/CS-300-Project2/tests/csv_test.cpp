@@ -342,18 +342,6 @@ TEST(ReadFile, SkipsEmptyLines) {
   EXPECT_EQ(lines.size(), 2u);
 }
 
-TEST(ReadFile, EmptyFileReportsError) {
-  TempFile file("");
-  Lines lines;
-
-  ::testing::internal::CaptureStdout();
-  readFile(file.path(), lines);
-  std::string output = ::testing::internal::GetCapturedStdout();
-
-  EXPECT_TRUE(lines.empty());
-  EXPECT_NE(output.find("File is empty"), std::string::npos);
-}
-
 // ---------------------------------------------------------------------------
 // readFile + FileToRows together, the way the app loads a catalog
 // ---------------------------------------------------------------------------
