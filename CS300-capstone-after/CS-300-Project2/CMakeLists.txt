@@ -34,6 +34,7 @@ endif()
 add_library(catalog_lib
   src/csv.cpp
   src/helpers.cpp
+  src/graph.cpp
 )
 target_include_directories(catalog_lib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/inc")
 
@@ -58,3 +59,4 @@ endfunction()
 add_unit_test(csv)
 add_unit_test(bst)
 add_unit_test(avl)
+add_unit_test(graph)

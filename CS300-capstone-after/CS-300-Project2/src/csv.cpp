@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 #include <unordered_set>
 
 #include "csv.h"
@@ -8,12 +7,6 @@
 /*
  * helper function to read file into vector.
  */
-// FIXED: (SE)[Error Handling]: If the file fails to open, nothing is reported
-// and laoding silently does nothing. Report the failure to the caller.
-// FIXED: (SE)[Correctness]: While (ifile.good()) + getline is fragile. Use
-// while (getline()) instead. FIXED: (SE)[Error Handling]: exit(1) inside the
-// helper kills the program and skips cleanup. Throw or return an error so main
-// cn decide what to do.
 void readFile(std::string csvPath, std::vector<std::string> &_originalFile) {
   std::string line;
 
@@ -69,15 +62,6 @@ bool verifyFile(const Rows &rows) {
 /*
  * helper function to read from vector into rows with individual columns.
  */
-// FIXED: (SE)[Memory]: Allocating new row() each loop but never frees them.
-// Since we are pushing back row into rows, it copies it, and we empty the
-// origonal. We never get rid of that original object and after the loop ends,
-// we lose the ability to free and it never is freed.
-// Fix: We dont need to allocte here at all. We can just let the containers
-// own the data so whent he loop ends, leftover data is destoryed
-// automatically. Simplest fix.
-// FIXED: (SE)[Memory]: There is no input validation here, no whitespace
-// trimming, \r trimming, for windows, this would likely break.
 Rows FileToRows(std::vector<std::string> &_originalFile) {
   Rows rows = Rows();
 

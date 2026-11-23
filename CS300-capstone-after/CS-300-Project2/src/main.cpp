@@ -12,11 +12,13 @@
 #include "bst.h"
 #include "course.h"
 #include "csv.h"
+#include "graph.h"
 #include "helpers.h"
 
 struct App {
   BinarySearchTree<Course> bst;
   AVLTree<Course> avl;
+  PrereqGraph graph;
   std::string csvpath;
   std::vector<std::string> originalFile;
   int mode = 1; // 1 = AVL, 2 = BST
@@ -41,6 +43,16 @@ template <typename T> void GenerateTreePng(App &app, T &DS) {
   std::ofstream svg(filename);
   WriteSvg(DS.Root(), svg);
   std::cout << "Saved" << filename << std::endl;
+}
+
+PrereqGraph BuildGraph(const Rows &rows) {
+  PrereqGraph g;
+  for (const Row &row : rows)
+    g.AddCourse(row[0]); // all courses first
+  for (const Row &row : rows)
+    for (std::size_t i = 2; i < row.size(); ++i)
+      g.AddEdge(row[i], row[0]); // prereq -> course
+  return g;
 }
 
 /*
@@ -81,8 +93,12 @@ template <typename T> void csvParse(App &app, T &DS) {
   // Read contents to rows.
   try {
     Rows rows = FileToRows(app.originalFile);
+    PrereqGraph graph = BuildGraph(rows);
+    graph.TopologicalOrder(); // throws CyclicPrereqException on a loop
+
     // insert rows into bst.
     RowsToDS(DS, rows);
+    app.graph = std::move(graph);
   } catch (const std::exception &e) {
     std::cout << "Could not load file: " << e.what() << std::endl;
   }
@@ -151,6 +167,8 @@ void printMenu(int avlOrbst) {
   std::cout << "    2. Print Course Tree.\n";
   std::cout << "    3. Print Course.\n";
   std::cout << "    4. Generate Tree PNG.\n";
+  std::cout << "    5. Print Course Plan.\n";
+  std::cout << "    6. Print All Prerequisites.\n";
   if (avlOrbst == 1)
     std::cout << "    8. Switch to bst.\n";
   else if (avlOrbst == 2) {
@@ -165,6 +183,8 @@ enum class MenuOption : int {
   PrintCourseTree = 2,
   PrintCourse = 3,
   GenerateTreePNG = 4,
+  PrintCoursePlan = 5,
+  PrintAllPrereqs = 6,
   Switch = 8,
   Exit = 9
 };
@@ -197,6 +217,24 @@ template <typename T> void handleInput(App &app, T &DS, int &input) {
   case MenuOption::GenerateTreePNG:
     GenerateTreePng(app, DS);
     break;
+  case MenuOption::PrintCoursePlan: {
+    auto levels = app.graph.Levels();
+    for (std::size_t i = 0; i < levels.size(); ++i) {
+      std::cout << "Term " << i + 1 << ":";
+      for (const auto &id : levels[i])
+        std::cout << ' ' << id;
+      std::cout << '\n';
+    }
+    break;
+  }
+  case MenuOption::PrintAllPrereqs: {
+    std::string id;
+    std::cout << "Enter courseID: ";
+    getInput(id);
+    for (const auto &p : app.graph.AllPrereqs(id))
+      std::cout << p << '\n';
+    break;
+  }
   case MenuOption::Switch:
     app.mode = (app.mode == 1) ? 2 : 1;
     DS.Clear();
