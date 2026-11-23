@@ -230,9 +230,9 @@ AVLTree<T>::addAVLNode(std::unique_ptr<AVLNode<T>> node, const T &item) {
     return std::make_unique<AVLNode<T>>(item);
   }
 
-  if (std::string(item.getKey()) < std::string(node->getKey()))
+  if (item.getKey() < node->getKey())
     node->left = addAVLNode(std::move(node->left), item);
-  else if (std::string(item.getKey()) > std::string(node->getKey()))
+  else if (item.getKey() > node->getKey())
     node->right = addAVLNode(std::move(node->right), item);
   else {
     std::cout << "Error: Item already exists, aborting." << std::endl;
