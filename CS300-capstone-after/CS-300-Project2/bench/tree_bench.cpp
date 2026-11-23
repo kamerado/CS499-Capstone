@@ -1,3 +1,4 @@
+#include "avl.h"
 #include "bst.h"
 #include "course.h"
 #include <algorithm>
@@ -45,6 +46,7 @@ static void BM_Search(benchmark::State &state) {
   state.SetComplexityN(state.range(0));
 }
 
+// ---- BST (baseline) ----
 using BST = BinarySearchTree<Course>;
 BENCHMARK_TEMPLATE(BM_Insert, BST, false)
     ->RangeMultiplier(2)
@@ -61,6 +63,31 @@ BENCHMARK_TEMPLATE(BM_Search, BST, false)
 BENCHMARK_TEMPLATE(BM_Search, BST, true)
     ->RangeMultiplier(2)
     ->Range(256, 8192)
+    ->Complexity();
+
+// ---- AVL (enhancement) ----
+using AVL = AVLTree<Course>;
+BENCHMARK_TEMPLATE(BM_Insert, AVL, false)
+    ->RangeMultiplier(2)
+    ->Range(256, 8192)
+    ->Complexity();
+BENCHMARK_TEMPLATE(BM_Insert, AVL, true)
+    ->RangeMultiplier(2)
+    ->Range(256, 8192)
+    ->Complexity();
+BENCHMARK_TEMPLATE(BM_Search, AVL, false)
+    ->RangeMultiplier(2)
+    ->Range(256, 8192)
+    ->Complexity();
+BENCHMARK_TEMPLATE(BM_Search, AVL, true)
+    ->RangeMultiplier(2)
+    ->Range(256, 8192)
+    ->Complexity();
+// Extra bench to showcase larger trees.
+BENCHMARK_TEMPLATE(BM_Insert, AVL, false)
+    ->Name("BM_Insert<AVL, sorted>/large")
+    ->RangeMultiplier(4)
+    ->Range(8192, 1 << 20)
     ->Complexity();
 
 BENCHMARK_MAIN();
