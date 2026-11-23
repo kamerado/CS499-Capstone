@@ -215,6 +215,7 @@ std::vector<std::vector<std::string>> PrereqGraph::Levels() const {
 }
 
 // Export
+// In case we want to add a feature for exporting.
 void PrereqGraph::WriteDot(std::ostream &out) const {
   out << "digraph Prerequisites {\n";
   out << "  rankdir=LR;\n"; // prereqs on the left, later courses to the right
