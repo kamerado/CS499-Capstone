@@ -45,6 +45,7 @@ struct Course {
   }
 
   const std::string &getKey() const { return courseID; }
+  bool operator==(const Course &) const = default;
 };
 
 #endif // !COURSE_H

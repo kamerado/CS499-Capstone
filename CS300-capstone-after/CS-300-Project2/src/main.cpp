@@ -1,303 +1,462 @@
-#include <algorithm>
-#include <cctype>
+/*
+ * Presentation layer: menus and console I/O only.
+ *
+ * main() is the composition root. It is the one place that knows which
+ * concrete repository is in use; it builds a CsvRepository or a
+ * SqliteRepository, hands it to CourseService as an ICourseRepository&, and
+ * from then on the menu talks only to the service.
+ *
+ *   CLI (this file) -> CourseService -> ICourseRepository
+ *                                         ^              ^
+ *                                  CsvRepository  SqliteRepository
+ *
+ * Usage:
+ *   app                      ask for a CSV file or a database at startup
+ *   app catalog.csv          open a CSV file (read-only)
+ *   app catalog.db           open (or create) a SQLite database
+ * Choosing "SQLite database" at the prompt and pressing Enter uses
+ * <build folder>/catalog.db.
+ */
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include "Treeprint.h"
-#include "avl.h"
-#include "bst.h"
-#include "course.h"
-#include "csv.h"
-#include "graph.h"
+#include "course_service.h"
+#include "csv.h" // trim()
+#include "csv_repository.h"
 #include "helpers.h"
+#include "sqlite_repository.h"
 
-struct App {
-  BinarySearchTree<Course> bst;
-  AVLTree<Course> avl;
-  PrereqGraph graph;
-  std::string csvpath;
-  std::vector<std::string> originalFile;
-  int mode = 1; // 1 = AVL, 2 = BST
-  bool running = true;
-};
+namespace fs = std::filesystem;
 
-std::string treeFileName(const App &app) {
-  namespace fs = std::filesystem;
+// Where a new database goes when the user just presses Enter. CMake sets this
+// to <build folder>/catalog.db; the fallback is the current folder.
+#ifndef CATALOG_DEFAULT_DB
+#define CATALOG_DEFAULT_DB "catalog.db"
+#endif
 
-  std::string base = fs::path(app.csvpath).stem().string() + "_" +
-                     (app.mode == 1 ? "avl" : "bst");
+namespace {
 
+// ---- Console input
+// ------------------------------------------------------------- std::getline
+// (not cin >>) so names with spaces work. Returns false at end of input, so a
+// closed stdin ends the program instead of looping forever.
+
+bool prompt(const std::string &label, std::string &out) {
+  std::cout << label;
+  if (!std::getline(std::cin, out))
+    return false;
+  out = trim(out);
+  return true;
+}
+
+std::vector<std::string> splitIds(const std::string &line) {
+  std::vector<std::string> ids;
+  std::stringstream ss(line);
+  std::string part;
+  while (std::getline(ss, part, ','))
+    if (auto id = CourseService::NormalizeId(part); !id.empty())
+      ids.push_back(id);
+  return ids;
+}
+
+bool confirm(const std::string &question) {
+  std::string answer;
+  if (!prompt(question + " (y/n): ", answer))
+    return false;
+  return answer == "y" || answer == "Y" || answer == "yes";
+}
+
+bool isDatabasePath(const std::string &path) {
+  auto ext = fs::path(path).extension().string();
+  return ext == ".db" || ext == ".sqlite" || ext == ".sqlite3";
+}
+
+// ---- Choosing storage
+// ------------------------------------------------------------
+
+enum class StartOption : int { CsvFile = 1, Database = 2, Exit = 9 };
+
+std::unique_ptr<ICourseRepository> openRepository(const std::string &path) {
+  if (isDatabasePath(path))
+    return std::make_unique<SqliteRepository>(path);
+  if (!fs::exists(path))
+    throw RepositoryError("File not found: " + path);
+  return std::make_unique<CsvRepository>(path);
+}
+
+std::unique_ptr<ICourseRepository> chooseRepository() {
+  while (true) {
+    std::cout << "Where is the course catalog?\n"
+              << "    1. CSV file (read-only)\n"
+              << "    2. SQLite database (editable, created if missing)\n"
+              << "    9. Exit\n\n";
+    int choice = 0;
+    if (!getInput(choice))
+      return nullptr;
+
+    std::string path;
+    switch (static_cast<StartOption>(choice)) {
+    case StartOption::CsvFile:
+      if (!prompt("CSV file name: ", path))
+        return nullptr;
+      if (!fs::exists(path)) {
+        std::cout << "File not found: " << path << "\n\n";
+        continue;
+      }
+      return std::make_unique<CsvRepository>(path);
+    case StartOption::Database:
+      std::cout << "Database file (Enter for " << CATALOG_DEFAULT_DB << "): ";
+      if (!prompt("", path))
+        return nullptr;
+      if (path.empty())
+        path = CATALOG_DEFAULT_DB;
+      try {
+        return std::make_unique<SqliteRepository>(path);
+      } catch (const std::exception &e) {
+        std::cout << e.what() << "\n\n";
+        continue;
+      }
+    case StartOption::Exit:
+      return nullptr;
+    default:
+      std::cout << "Please enter a valid option.\n\n";
+    }
+  }
+}
+
+TreeKind chooseTree() {
+  while (true) {
+    std::cout << "Which search tree should hold the catalog in memory?\n"
+              << "    1. AVL (self-balancing)\n"
+              << "    2. BST (unbalanced, for comparison)\n\n";
+    int choice = 0;
+    if (!getInput(choice) || choice == 1)
+      return TreeKind::AVL;
+    if (choice == 2)
+      return TreeKind::BST;
+    std::cout << "Please enter a valid option.\n\n";
+  }
+}
+
+// ---- Output
+// ----------------------------------------------------------------------
+
+void printCourse(const CourseService &service, const Course &c) {
+  c.print();
+  if (service.Completed().count(c.courseID))
+    std::cout << "(completed)\n\n";
+}
+
+std::string treeFileName(const CourseService &service) {
+  std::string base =
+      service.Tree() == TreeKind::AVL ? "catalog_avl" : "catalog_bst";
   std::string name = base + ".svg";
   for (int i = 1; fs::exists(name); ++i)
     name = base + "(" + std::to_string(i) + ").svg";
-
   return name;
 }
 
-template <typename T> void GenerateTreePng(App &app, T &DS) {
-  std::string filename = treeFileName(app);
+void writeTreeSvg(const CourseService &service) {
+  std::string filename = treeFileName(service);
   std::ofstream svg(filename);
-  WriteSvg(DS.Root(), svg);
-  std::cout << "Saved" << filename << std::endl;
+  if (service.Tree() == TreeKind::AVL)
+    WriteSvg(service.Avl().Root(), svg);
+  else
+    WriteSvg(service.Bst().Root(), svg);
+  std::cout << "Saved " << filename << "\n";
 }
 
-PrereqGraph BuildGraph(const Rows &rows) {
-  PrereqGraph g;
-  for (const Row &row : rows)
-    g.AddCourse(row[0]); // all courses first
-  for (const Row &row : rows)
-    for (std::size_t i = 2; i < row.size(); ++i)
-      g.AddEdge(row[i], row[0]); // prereq -> course
-  return g;
+void printTree(const CourseService &service) {
+  if (service.Tree() == TreeKind::AVL)
+    PrintTree(service.Avl().Root(), std::cout);
+  else
+    PrintTree(service.Bst().Root(), std::cout);
 }
 
-/*
- * helper fucntion to insert into BST from rows.
- */
-// TODO: (DB)[Data integrity]: Prerequisites are never checked against
-// courses, dupe course IDS are accepted. In SQLite A PRIMARY KEY on
-// courseID and FOREIGN KEY on Prerequisites enforce both.
-template <typename T> void RowsToDS(T &DS, Rows &rows) {
-  /*
-   * iterate over rows.
-   */
-  Rows::iterator it2 = rows.begin();
+// ---- Menu
+// ------------------------------------------------------------------------
 
-  for (; it2 != rows.end(); it2++) { // for each row.
-
-    // Get data.
-    std::string courseid = it2->at(0);
-    std::string coursetitle = it2->at(1);
-    std::vector<std::string> prereqs;
-    for (std::size_t i = 2; i < it2->size(); i++) {
-      prereqs.push_back(it2->at(i));
-    }
-
-    // add data to Course.
-    Course course(courseid, coursetitle, prereqs);
-    DS.Insert(course); // add Course to BST<T> where T = Course.
-  }
-}
-
-/*
- * function to parse csv file.
- */
-// TODO: (DB)[Structure]: Replace in-memory-only storage with SQLite.
-// courses(course_id PK, title) and prerequisites(course_id, prereq_id) with
-// FKs. Import the CSV inside a transaction using parameterized queries only.
-template <typename T> void csvParse(App &app, T &DS) {
-  // Read contents to rows.
-  try {
-    Rows rows = FileToRows(app.originalFile);
-    PrereqGraph graph = BuildGraph(rows);
-    graph.TopologicalOrder(); // throws CyclicPrereqException on a loop
-
-    // insert rows into bst.
-    RowsToDS(DS, rows);
-    app.graph = std::move(graph);
-  } catch (const std::exception &e) {
-    std::cout << "Could not load file: " << e.what() << std::endl;
-  }
-}
-
-/*
- * helper function to get user input and search for input in BST.
- */
-// TODO: (DB): Search will become a parameterized SELECT once SQLite is added.
-template <typename T> void search(T &DS) {
-  clear();
-
-  std::string key;
-  std::cout << "Enter courseID: ";
-  getInput(key);
-
-  std::transform(key.begin(), key.end(), key.begin(),
-                 [](unsigned char c) { return std::toupper(c); });
-
-  clear();
-
-  auto tmp = DS.Search(key);
-  if (tmp.has_value() && tmp.value().getKey() == key) {
-    tmp.value().print();
-  } else {
-    std::cout << "No valid search results." << std::endl;
-  }
-}
-
-/*
- * function to print out the custom item type.
- */
-void print(Node<Course> *node) { node->item.print(); }
-
-/*
- * helper fucntion to get file name as input from user.
- */
-void getPath(App &app) {
-  std::cout << "\nPlease enter csv file name: " << std::endl;
-  std::string csvpath;
-  getInput(csvpath);
-  app.csvpath = csvpath;
-
-  while (!exists(csvpath)) {
-    clear();
-    std::cout << "\nFilename invalid." << std::endl;
-
-    std::cout << "\nPlease enter csv file name: " << std::endl;
-    getInput(csvpath);
-  }
-  try {
-    readFile(csvpath, app.originalFile);
-  } catch (const EmptyFileException &e) {
-    std::cout << "Error: " << e.what() << std::endl;
-  } catch (const std::exception &) {
-    std::cout << "An error occored when opening file." << std::endl;
-  }
-}
-
-/*
- * helper function to print menu.
- */
-// TODO: (DB)[Structure]: Add menu options to add, update, and delete courses.
-void printMenu(int avlOrbst) {
-  std::cout << "    1. Print Course List.\n";
-  std::cout << "    2. Print Course Tree.\n";
-  std::cout << "    3. Print Course.\n";
-  std::cout << "    4. Generate Tree PNG.\n";
-  std::cout << "    5. Print Course Plan.\n";
-  std::cout << "    6. Print All Prerequisites.\n";
-  if (avlOrbst == 1)
-    std::cout << "    8. Switch to bst.\n";
-  else if (avlOrbst == 2) {
-    std::cout << "    8. Switch to avl.\n";
-  }
-  std::cout << "    9. Exit.\n\n";
-}
-
-// Menu options. Values match what the user types at the prompt.
+// Values match what the user types at the prompt.
 enum class MenuOption : int {
   PrintCourseList = 1,
   PrintCourseTree = 2,
   PrintCourse = 3,
-  GenerateTreePNG = 4,
+  GenerateTreeSvg = 4,
   PrintCoursePlan = 5,
   PrintAllPrereqs = 6,
-  Switch = 8,
-  Exit = 9
+  EligibleCourses = 7,
+  SwitchTree = 8,
+  Exit = 9,
+  AddCourse = 10,
+  UpdateCourse = 11,
+  RemoveCourse = 12,
+  MarkCompleted = 13,
+  ImportCsv = 14,
 };
-//
-// Menu options. Values match what the user types at the prompt.
-enum class DSOption : int { AVLTree = 1, BST = 2, Exit = 9 };
 
-void loadIntoDS(App &app) {
-  if (app.mode == 1)
-    csvParse(app, app.avl);
-  else if (app.mode == 2)
-    csvParse(app, app.bst);
+void printMenu(const CourseService &service) {
+  bool avl = service.Tree() == TreeKind::AVL;
+  std::cout << "\n[" << service.StorageDescription() << " | "
+            << (avl ? "AVL" : "BST") << " | " << service.CourseCount()
+            << " courses]\n"
+            << "    1. Print course list\n"
+            << "    2. Print course tree\n"
+            << "    3. Print course\n"
+            << "    4. Save course tree as SVG\n"
+            << "    5. Print course plan\n"
+            << "    6. Print all prerequisites\n"
+            << "    7. Courses I can take next\n"
+            << "    8. Switch to " << (avl ? "BST" : "AVL") << "\n";
+  if (service.CanEdit())
+    std::cout << "   10. Add course\n"
+              << "   11. Update course\n"
+              << "   12. Remove course\n"
+              << "   13. Mark course completed / not completed\n"
+              << "   14. Import CSV file into database\n";
+  std::cout << "    9. Exit\n\n";
 }
 
-/*
- * helper fucntion to decide program logic based on user input.
- */
-template <typename T> void handleInput(App &app, T &DS, int &input) {
-  switch (static_cast<MenuOption>(input)) {
+// Each handler may throw; runMenu() reports the message and carries on.
+
+void searchCourse(const CourseService &service) {
+  std::string id;
+  if (!prompt("Enter course ID: ", id))
+    return;
+  if (auto course = service.Find(id))
+    printCourse(service, *course);
+  else
+    std::cout << "No course " << CourseService::NormalizeId(id) << ".\n";
+}
+
+void printPlan(const CourseService &service) {
+  auto levels = service.Graph().Levels();
+  for (std::size_t i = 0; i < levels.size(); ++i) {
+    std::cout << "Term " << i + 1 << ":";
+    for (const auto &id : levels[i])
+      std::cout << ' ' << id;
+    std::cout << '\n';
+  }
+}
+
+void printAllPrereqs(const CourseService &service) {
+  std::string id;
+  if (!prompt("Enter course ID: ", id))
+    return;
+  id = CourseService::NormalizeId(id);
+  if (!service.Graph().Contains(id)) {
+    std::cout << "No course " << id << ".\n";
+    return;
+  }
+  auto all = service.Graph().AllPrereqs(id);
+  if (all.empty())
+    std::cout << id << " has no prerequisites.\n";
+  for (const auto &p : all)
+    std::cout << p << '\n';
+}
+
+void printEligible(const CourseService &service) {
+  auto courses = service.EligibleCourses();
+  if (courses.empty()) {
+    std::cout << "Nothing left to take.\n";
+    return;
+  }
+  std::cout << "You can take these next:\n";
+  for (const auto &c : courses)
+    std::cout << "    " << c.courseID << "  " << c.courseTitle << '\n';
+}
+
+void addCourse(CourseService &service) {
+  std::string id, title, prereqs;
+  if (!prompt("Course ID: ", id) || !prompt("Title: ", title) ||
+      !prompt("Prerequisites (comma-separated, blank for none): ", prereqs))
+    return;
+  service.AddCourse(Course(id, title, splitIds(prereqs)));
+  std::cout << "Added " << CourseService::NormalizeId(id) << ".\n";
+}
+
+void updateCourse(CourseService &service) {
+  std::string id;
+  if (!prompt("Course ID to update: ", id))
+    return;
+  auto current = service.Find(id);
+  if (!current)
+    throw CourseNotFoundError(CourseService::NormalizeId(id));
+  current->print();
+
+  std::string title, prereqs;
+  if (!prompt("New title (blank keeps it): ", title) ||
+      !prompt("New prerequisites (comma-separated, blank keeps them, - for "
+              "none): ",
+              prereqs))
+    return;
+  Course updated = *current;
+  if (!title.empty())
+    updated.courseTitle = title;
+  if (prereqs == "-")
+    updated.prereq.clear();
+  else if (!prereqs.empty())
+    updated.prereq = splitIds(prereqs);
+
+  service.UpdateCourse(updated);
+  std::cout << "Updated " << updated.courseID << ".\n";
+}
+
+void removeCourse(CourseService &service) {
+  std::string id;
+  if (!prompt("Course ID to remove: ", id))
+    return;
+  id = CourseService::NormalizeId(id);
+  if (!confirm("Permanently remove " + id + "?"))
+    return;
+  service.RemoveCourse(id);
+  std::cout << "Removed " << id << ".\n";
+}
+
+void markCompleted(CourseService &service) {
+  std::string id;
+  if (!prompt("Course ID: ", id))
+    return;
+  id = CourseService::NormalizeId(id);
+  bool nowCompleted = !service.Completed().count(id);
+  service.MarkCompleted(id, nowCompleted);
+  std::cout << id
+            << (nowCompleted ? " marked completed.\n"
+                             : " marked not completed.\n");
+}
+
+void importCsv(CourseService &service) {
+  std::string path;
+  if (!prompt("CSV file to import: ", path) || path.empty())
+    return;
+  if (!fs::exists(path))
+    throw RepositoryError("File not found: " + path);
+  if (service.CourseCount() > 0 &&
+      !confirm("This replaces all " + std::to_string(service.CourseCount()) +
+               " courses and your completed list. Continue?"))
+    return;
+  CsvRepository source(path);
+  std::size_t n = service.ImportFrom(source);
+  std::cout << "Imported " << n << " courses.\n";
+}
+
+// Returns false when the user chooses Exit.
+bool handle(CourseService &service, int input) {
+  auto option = static_cast<MenuOption>(input);
+  bool editOption = input >= static_cast<int>(MenuOption::AddCourse);
+  if (editOption && !service.CanEdit()) {
+    std::cout << "Please input a valid option.\n";
+    return true;
+  }
+
+  switch (option) {
   case MenuOption::PrintCourseList:
-    clear();
-    DS.InOrder([](const Course &c) { c.print(); });
+    for (const auto &c : service.AllCoursesSorted())
+      printCourse(service, c);
     break;
   case MenuOption::PrintCourseTree:
-    PrintTree(DS.Root(), std::cout);
+    printTree(service);
     break;
   case MenuOption::PrintCourse:
-    search(DS);
+    searchCourse(service);
     break;
-  case MenuOption::GenerateTreePNG:
-    GenerateTreePng(app, DS);
+  case MenuOption::GenerateTreeSvg:
+    writeTreeSvg(service);
     break;
-  case MenuOption::PrintCoursePlan: {
-    auto levels = app.graph.Levels();
-    for (std::size_t i = 0; i < levels.size(); ++i) {
-      std::cout << "Term " << i + 1 << ":";
-      for (const auto &id : levels[i])
-        std::cout << ' ' << id;
-      std::cout << '\n';
-    }
+  case MenuOption::PrintCoursePlan:
+    printPlan(service);
     break;
-  }
-  case MenuOption::PrintAllPrereqs: {
-    std::string id;
-    std::cout << "Enter courseID: ";
-    getInput(id);
-    for (const auto &p : app.graph.AllPrereqs(id))
-      std::cout << p << '\n';
+  case MenuOption::PrintAllPrereqs:
+    printAllPrereqs(service);
     break;
-  }
-  case MenuOption::Switch:
-    app.mode = (app.mode == 1) ? 2 : 1;
-    DS.Clear();
-    loadIntoDS(app);
+  case MenuOption::EligibleCourses:
+    printEligible(service);
+    break;
+  case MenuOption::SwitchTree:
+    service.SetTree(service.Tree() == TreeKind::AVL ? TreeKind::BST
+                                                    : TreeKind::AVL);
+    break;
+  case MenuOption::AddCourse:
+    addCourse(service);
+    break;
+  case MenuOption::UpdateCourse:
+    updateCourse(service);
+    break;
+  case MenuOption::RemoveCourse:
+    removeCourse(service);
+    break;
+  case MenuOption::MarkCompleted:
+    markCompleted(service);
+    break;
+  case MenuOption::ImportCsv:
+    importCsv(service);
     break;
   case MenuOption::Exit:
-    app.running = false;
-    break;
+    return false;
   default:
-    clear();
-    std::cout << "Please input a valid option." << std::endl;
-    break;
+    std::cout << "Please input a valid option.\n";
   }
+  return true;
 }
 
-void avlOrBst(App &app) {
-  int input;
-
-  clear();
-  std::cout << "Would you like to use avl or bst?\n";
-
+void runMenu(CourseService &service) {
   while (true) {
-    std::cout << "1. AVL\n";
-    std::cout << "2. BST\n";
-    std::cout << "9. Exit" << std::endl;
-    getInput(input);
-    clear();
-    if (input == 1) {
-      csvParse(app, app.avl);
-      app.mode = input;
-      return;
-    } else if (input == 2) {
-      csvParse(app, app.bst);
-      app.mode = input;
-      return;
+    printMenu(service);
+    int input = 0;
+    if (!getInput(input))
+      return; // end of input
+    try {
+      if (!handle(service, input))
+        return;
+    } catch (const std::exception &e) {
+      // Nothing was changed: the service validates first and the
+      // repository writes all-or-nothing.
+      std::cout << "Error: " << e.what() << '\n';
     }
-
-    std::cout << "Please enter a valid option.";
   }
 }
 
-/*
- * main fucntion.
- */
-int main() {
-  // Declare variables for functon implementaions.
-  App app;
-  int input;
+} // namespace
 
-  getPath(app);
-  avlOrBst(app);
+int main(int argc, char *argv[]) {
+  std::cout << "Welcome to the ABCU course planner.\n\n";
 
-  std::cout << "\nWelcome to the course planner." << std::endl;
-  while (app.running) {
-    printMenu(app.mode);
-    if (getInput(input)) {
-      if (app.mode == 1)
-        handleInput(app, app.avl, input);
-      else
-        handleInput(app, app.bst, input);
+  std::unique_ptr<ICourseRepository> repo;
+  try {
+    repo = argc > 1 ? openRepository(argv[1]) : chooseRepository();
+  } catch (const std::exception &e) {
+    std::cout << "Error: " << e.what() << '\n';
+    return 1;
+  }
+  if (!repo) {
+    std::cout << "Goodbye.\n";
+    return 0;
+  }
+
+  CourseService service(*repo, chooseTree());
+  try {
+    service.Load();
+  } catch (const std::exception &e) {
+    std::cout << "Could not load the catalog: " << e.what() << '\n';
+    return 1;
+  }
+
+  if (service.CanEdit() && service.CourseCount() == 0) {
+    std::cout << "The database is empty.\n";
+    try {
+      importCsv(service);
+    } catch (const std::exception &e) {
+      std::cout << "Error: " << e.what() << '\n';
     }
   }
 
-  clear();
-  std::cout << "Goodbye." << std::endl;
+  runMenu(service);
+  std::cout << "Goodbye.\n";
+  return 0;
 }

@@ -81,7 +81,7 @@ public:
   void Insert(const T &item);
   void Remove(const std::string &itemID);
   const Node<T> *Root() const { return root.get(); }
-  std::optional<T> Search(const std::string &itemID);
+  std::optional<T> Search(const std::string &itemID) const;
   void Clear();
 };
 
@@ -158,7 +158,7 @@ void BinarySearchTree<T>::Remove(const std::string &itemID) {
 // FIXED: (SE)[Structure]: returns empty course as not found. We can use an
 // optional here instead.
 template <typename T>
-std::optional<T> BinarySearchTree<T>::Search(const std::string &itemID) {
+std::optional<T> BinarySearchTree<T>::Search(const std::string &itemID) const {
   // set current node equal to root
   Node<T> *curr = root.get();
 
